@@ -2703,6 +2703,40 @@ input:checked + .toggle-slider:before {
                 font-size: 14px;
             }
         }
+
+        /* Dark mode styles for Menfess section */
+[data-theme="dark"] .selected-crush {
+    background-color: #662d39; /* Darker pink background in dark mode */
+    color: #ffd9e0; /* Light pink text color in dark mode */
+}
+
+[data-theme="dark"] .selected-label {
+    color: #ffd9e0; /* Light pink color for label text in dark mode */
+}
+
+[data-theme="dark"] .no-crush-selected {
+    color: #ff8fa3; /* Brighter pink for the "no crush selected" text */
+}
+
+[data-theme="dark"] .crush-tag {
+    background-color: #ff4b6e; /* Brighter pink background for the tag */
+    color: #ffffff; /* White text for better contrast */
+}
+
+/* Ensure dark mode has good contrast for search results */
+[data-theme="dark"] .search-results {
+    background-color: #1e1e1e; /* Dark background for results dropdown */
+    border-color: #444444;
+}
+
+[data-theme="dark"] .search-item {
+    border-color: #333333;
+}
+
+[data-theme="dark"] .search-item:hover {
+    background-color: #662d39; /* Dark pink hover state */
+    color: #ffffff;
+}
     </style>
 
     <!-- JavaScript for Menfess functionality -->
