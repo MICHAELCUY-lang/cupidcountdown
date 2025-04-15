@@ -2895,25 +2895,25 @@ input:checked + .toggle-slider:before {
     </script>
 <?php endif; ?>
 
-                    <?php if ($page === 'chat'): ?>
+                   <?php if ($page === 'chat'): ?>
                         <div class="dashboard-header">
                             <h2>Chat</h2>
-                            <p>Chat dengan mahasiswa lain atau mulai blind chat.</p>
+                            <p>Chat dengan mahasiswa lain.</p>
                         </div>
                         
-                        <?php if (!empty($blind_chat_message)): ?>
-                        <div class="alert <?php echo strpos($blind_chat_message, 'success') !== false ? 'alert-success' : 'alert-danger'; ?>">
-                            <?php echo $blind_chat_message; ?>
+                        <?php if (!empty($chat_message)): ?>
+                        <div class="alert <?php echo strpos($chat_message, 'success') !== false ? 'alert-success' : 'alert-danger'; ?>">
+                            <?php echo $chat_message; ?>
                         </div>
                         <?php endif; ?>
                         
                         <div class="card">
                             <div class="card-header">
-                                <h3>Blind Chat</h3>
+                                <h3>Mulai Chat Baru</h3>
                             </div>
-                            <p>Mulai chat dengan mahasiswa acak tanpa melihat profil mereka terlebih dahulu.</p>
+                            <p>Mulai chat dengan mahasiswa acak.</p>
                             <form method="post" style="margin-top: 20px;">
-                                <button type="submit" name="start_blind_chat" class="btn">Mulai Blind Chat</button>
+                                <button type="submit" name="start_new_chat" class="btn">Mulai Chat Baru</button>
                             </form>
                         </div>
                         
@@ -2928,48 +2928,11 @@ input:checked + .toggle-slider:before {
                                     <?php foreach ($chat_sessions as $session): ?>
                                         <a href="chat.php?session_id=<?php echo $session['id']; ?>" class="chat-item">
                                             <div class="chat-avatar">
-                                                <?php 
-                                                // Check if blind chat and if user has permission
-                                                $is_blind = $session['is_blind'];
-                                                $partner_id = $session['partner_id'];
-                                                $has_permission = false;
-                                                
-                                                if ($is_blind) {
-                                                    // Check permission
-                                                    $permission_sql = "SELECT * FROM profile_view_permissions 
-                                                                    WHERE user_id = ? AND target_user_id = ?";
-                                                    $permission_stmt = $conn->prepare($permission_sql);
-                                                    $permission_stmt->bind_param("ii", $user_id, $partner_id);
-                                                    $permission_stmt->execute();
-                                                    $permission_result = $permission_stmt->get_result();
-                                                    $has_permission = ($permission_result->num_rows > 0);
-                                                }
-                                                
-                                                if (!$is_blind || $has_permission): 
-                                                ?>
-                                                    <img src="<?php echo !empty($session['profile_pic']) ? htmlspecialchars($session['profile_pic']) : 'assets/images/user_profile.png'; ?>" alt="Avatar">
-                                                <?php else: ?>
-                                                    <img src="assets/images/user_profile.png" alt="Anonymous">
-                                                <?php endif; ?>
+                                                <img src="<?php echo !empty($session['profile_pic']) ? htmlspecialchars($session['profile_pic']) : 'assets/images/user_profile.png'; ?>" alt="Avatar">
                                             </div>
                                             <div class="chat-info">
                                                 <div class="chat-name">
-                                                    <?php 
-                                                    if ($is_blind && !$has_permission) {
-                                                        echo 'Anonymous User';
-                                                        echo '<i class="fas fa-lock lock-icon" title="Profil Terkunci"></i>';
-                                                    } else {
-                                                        echo htmlspecialchars($session['partner_name']);
-                                                        if ($is_blind && $has_permission) {
-                                                            echo '<i class="fas fa-unlock lock-icon" title="Profil Terbuka"></i>';
-                                                        }
-                                                    }
-                                                    ?>
-                                                    <?php if ($is_blind): ?>
-                                                        <span style="font-size: 12px; color: var(--primary); text-decoration: none; margin-left: 5px;">
-                                                            (Blind Chat)
-                                                        </span>
-                                                    <?php endif; ?>
+                                                    <?php echo htmlspecialchars($session['partner_name']); ?>
                                                 </div>
                                                 <div class="chat-last-msg">Klik untuk melihat percakapan</div>
                                             </div>
@@ -2978,7 +2941,7 @@ input:checked + .toggle-slider:before {
                                             if (isset($session['last_message_time']) && !empty($session['last_message_time'])) {
                                                 echo date('d M', strtotime($session['last_message_time'])); 
                                             } else {
-                                                echo'Baru';
+                                                echo 'Baru';
                                             }
                                             ?>
                                             </div>
@@ -2987,8 +2950,9 @@ input:checked + .toggle-slider:before {
                                 <?php endif; ?>
                             </div>
                         </div>
+                    <?php endif; ?>
                     
-                   <?php elseif ($page === 'compatibility'): ?>
+                   <?php if ($page === 'compatibility'): ?>
                         <div class="dashboard-header">
                             <h2>Tes Kecocokan</h2>
                             <p>Ikuti tes untuk menemukan pasangan yang cocok berdasarkan kepribadian, jurusan, dan minat.</p>
