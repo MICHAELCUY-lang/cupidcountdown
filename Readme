@@ -1,0 +1,34 @@
+1. Jika ingin melakukan perubahan atau penambahan pada database, tolong di update di db.sql
+2. Jangan ubah code yang berhubungan dengan payments
+    -admin_payment
+    -cek_payment_status
+    -create_profile_payment
+    -semua file yang bertulisan payment dan midtrans
+3. semua code sudah ada penjelasannya, jika tidak mengerti jangan asal di ubah.
+4. cupid.php adalah landing page pada web cupid
+5. kalau tidak mengerti code tanyakan pada MICHAEL T_T. satu titik dua koma, kurang titik error semua
+
+HARUS SEGERA DI FIX
+1. Profile chat anonymous yang masih pending payment tidak boleh kelihatan nama mereka di payment
+2. Payment_process.php harus segera di fix
+
+
+TO-DO-LIST
+1. membuat tampilan login dan daftar langsung di index (tidak perlu lagi login.php dan register.php)
+2. membuat tampilan admin
+3. merubah link direct setelah payment berhasil
+4. membuat fitur vc dan call
+5. membuat fitur deteksi NSFW di vc
+6. meningkatkan fitur keamanan payment,vc, call
+7. memperbaiki fitur chat anonymous (username, dan profile tidak boleh muncul sebelum melakukan payment)
+8. membuat fitur chat anonymous lebih aman
+9. membuat fitur challange pasangan tiap minggu
+10. membuat fitur foto profile menggunakan GIF
+11. membuat fitur premium
+12. membuat bot curhat
+13. merubah fitur confess yang tadinya bisa tau semua nama user menjadi isi nama user atau id user saja
+14. membuat id di stiap profile
+15. menambahkan fitur chat kalau sudah match
+16. memperbaiki sistem match
+17. memperbaiki sistem compability.php
+18. membuat interface yang lebih menarik dan kekinian

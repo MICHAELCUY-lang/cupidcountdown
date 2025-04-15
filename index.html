@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Love in Multiple Languages Animation</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            background-color: #f5f5f5;
+        }
+
+        .intro-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .text-animation {
+            color: white;
+            font-size: 4rem;
+            font-weight: bold;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .main-content {
+            position: relative;
+            padding: 2rem;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
+
+        .visible {
+            opacity: 1;
+        }
+
+        .text-visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Intro animation container -->
+    <div class="intro-container" id="introContainer">
+        <div class="text-animation" id="textAnimation"></div>
+    </div>
+
+    <!-- Main website content -->
+    <div class="main-content" id="mainContent">
+        <h1>Selamat Datang di Website Kami</h1>
+        <p>Ini adalah konten utama website Anda.</p>
+        <!-- Tambahkan konten website Anda di sini -->
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Daftar kata "LOVE" dalam berbagai bahasa
+            const loveTexts = [
+                "LOVE", // Inggris
+                "CINTA", // Indonesia
+                "AMOR", // Spanyol/Portugis
+                "AMOUR", // Perancis
+                "LIEBE", // Jerman
+                "愛", // Mandarin
+                "사랑", // Korea
+                "प्यार", // Hindi
+                "حب", // Arab
+                "AMORE", // Italia
+                "ЛЮБОВЬ", // Rusia
+                "ΑΓΑΠΗ", // Yunani
+            ];
+
+            const textAnimationElement = document.getElementById('textAnimation');
+            const introContainer = document.getElementById('introContainer');
+            const mainContent = document.getElementById('mainContent');
+            
+            let currentIndex = 0;
+            
+            // Fungsi untuk menampilkan teks berikutnya
+            function showNextText() {
+                if (currentIndex >= loveTexts.length) {
+                    // Semua teks telah ditampilkan, arahkan ke index.php
+                    introContainer.classList.add('hidden');
+                    
+                    // Tunggu animasi fade-out selesai, lalu redirect
+                    setTimeout(() => {
+                        window.location.href = "cupid.php";
+                    }, 500);
+                    
+                    return;
+                }
+
+                // Sembunyikan teks saat ini
+                textAnimationElement.classList.remove('text-visible');
+                
+                // Tunggu animasi fade-out selesai
+                setTimeout(() => {
+                    // Perbarui teks
+                    textAnimationElement.innerHTML = loveTexts[currentIndex];
+                    
+                    // Tampilkan teks baru
+                    textAnimationElement.classList.add('text-visible');
+                    
+                    // Tingkatkan indeks
+                    currentIndex++;
+                    
+                    // Jadwalkan teks berikutnya
+                    setTimeout(showNextText, 200);
+                }, 200);
+            }
+            introContainer.style.backgroundColor = "#ff8fa3";
+            
+            // Mulai animasi teks
+            setTimeout(showNextText, 100);
+        });
+    </script>
+</body>
+</html>

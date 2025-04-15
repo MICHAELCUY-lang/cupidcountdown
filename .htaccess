@@ -1,0 +1,89 @@
+<IfModule mod_rewrite.c>
+    # Enable rewrite engine
+    RewriteEngine On
+    
+    # Set base directory (jika diperlukan)
+    # RewriteBase /
+    
+    # Jangan proses jika file atau direktori yang ada
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Rewrite untuk semua halaman utama (tanpa .php)
+    RewriteRule ^dashboard$ dashboard.php [L]
+    RewriteRule ^login$ login.php [L]
+    RewriteRule ^register$ register.php [L]
+    RewriteRule ^forgot_password$ forgot_password.php [L]
+    RewriteRule ^verify$ verify.php [L]
+    RewriteRule ^logout$ logout.php [L]
+    RewriteRule ^cupid$ cupid.php [L]
+    RewriteRule ^resend_verification$ resend_verification.php [L]
+    
+    # Rewrite untuk halaman fitur
+    RewriteRule ^chat$ chat.php [L]
+    RewriteRule ^profile$ profile.php [L]
+    RewriteRule ^menfess$ menfess.php [L]
+    RewriteRule ^compatibility$ compatibility.php [L]
+    RewriteRule ^view_profile$ view_profile.php [L]
+    RewriteRule ^start_chat$ start_chat.php [L]
+    
+    # Rewrite untuk halaman pembayaran
+    RewriteRule ^payment_callback$ payment_callback.php [L]
+    RewriteRule ^payment_process$ payment_process.php [L]
+    RewriteRule ^create_profile_payment$ create_profile_payment.php [L]
+    RewriteRule ^midtrans_notification$ midtrans_notification.php [L]
+    
+    # Rewrite untuk halaman admin
+    RewriteRule ^admin_dashboard$ admin_dashboard.php [L]
+    RewriteRule ^admin_users$ admin_users.php [L]
+    RewriteRule ^admin_payments$ admin_payments.php [L]
+    RewriteRule ^view_payment$ view_payment.php [L]
+    
+    # Rewrite untuk halaman dengan parameter (seperti view_profile?id=123)
+    # Pastikan baris ini ada setelah semua rewrite spesifik di atas
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([^/]+)$ $1.php [L]
+</IfModule>
+
+# Pastikan file index disembunyikan
+DirectoryIndex index.php index.html cupid.php
+
+# Protect .htaccess file
+<Files .htaccess>
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Protect sensitive files
+<FilesMatch "^(config\.php|env\.php|.*\.sql)$">
+    Order Allow,Deny  
+    Deny from all
+</FilesMatch>
+
+# PHP settings for better security
+<IfModule mod_php7.c>
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_value error_log "error_log.log"
+    php_value upload_max_filesize 10M
+    php_value post_max_size 20M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>
+
+# Cache settings
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Images
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    
+    # CSS, JavaScript
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
