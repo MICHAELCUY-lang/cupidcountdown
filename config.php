@@ -1,11 +1,6 @@
 <?php
 session_start();
 
-// Set Midtrans constants directly for reliability
-define('MIDTRANS_CLIENT_KEY', 'SB-Mid-client-PLcINWELsBNsoBdN');
-define('MIDTRANS_SERVER_KEY', 'SB-Mid-server-k5VnZZNVNdRTXqed22jd4LRD');
-define('MIDTRANS_IS_PRODUCTION', false);
-
 // Enable error reporting for debugging
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);

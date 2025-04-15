@@ -25,8 +25,6 @@ if ($conn->connect_error) {
 // Get profile ID from URL
 $profile_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $user_id = $_SESSION['user_id'];
-$from_payment = isset($_GET['from_payment']) ? true : false;
-$is_new_purchase = isset($_GET['new']) ? true : false;
 
 // Check if valid profile ID is provided
 if ($profile_id <= 0) {
@@ -44,22 +42,15 @@ $chat_stmt->execute();
 $chat_result = $chat_stmt->get_result();
 $is_blind_chat = ($chat_result->num_rows > 0);
 
-// If this is a blind chat, check if user has permission to view this profile
+// For blind chats, we'll now simply show the profile without payment checks
+// Just record that this profile has been viewed
 if ($is_blind_chat) {
-    $permission_sql = "SELECT * FROM profile_view_permissions WHERE user_id = ? AND target_user_id = ?";
+    // Add entry to profile_view_permissions if it doesn't exist yet
+    $permission_sql = "INSERT IGNORE INTO profile_view_permissions (user_id, target_user_id, created_at) 
+                      VALUES (?, ?, NOW())";
     $permission_stmt = $conn->prepare($permission_sql);
     $permission_stmt->bind_param("ii", $user_id, $profile_id);
     $permission_stmt->execute();
-    $permission_result = $permission_stmt->get_result();
-    $has_permission = ($permission_result->num_rows > 0);
-    
-    // If user doesn't have permission, redirect to payment
-    if (!$has_permission) {
-        // Get chat session ID
-        $chat_session = $chat_result->fetch_assoc();
-        header('Location: create_profile_payment.php?chat_id=' . $chat_session['id'] . '&partner_id=' . $profile_id);
-        exit();
-    }
 }
 
 // Get user and profile data
@@ -344,48 +335,6 @@ function redirect($url) {
             margin-right: 10px;
         }
         
-        .payment-success-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        
-        .payment-success-modal {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-        }
-        
-        .success-icon {
-            font-size: 60px;
-            color: #28a745;
-            margin-bottom: 20px;
-        }
-        
-        .payment-success-modal h2 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-        
-        .payment-success-modal p {
-            margin-bottom: 10px;
-            color: #666;
-        }
-        
-        .payment-success-modal .btn {
-            margin-top: 20px;
-        }
-        
         @media (max-width: 767px) {
             .profile-header {
                 flex-direction: column;
@@ -563,25 +512,5 @@ function redirect($url) {
             <?php endif; ?>
         </div>
     </section>
-
-    <?php if ($from_payment && $is_new_purchase): ?>
-    <div class="payment-success-overlay" id="paymentSuccessOverlay">
-        <div class="payment-success-modal">
-            <div class="success-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <h2>Pembayaran Berhasil!</h2>
-            <p>Anda sekarang memiliki akses penuh ke profil ini.</p>
-            <p>Terima kasih telah menggunakan Cupid!</p>
-            <button onclick="closePaymentSuccessModal()" class="btn">Tutup</button>
-        </div>
-    </div>
-
-    <script>
-        function closePaymentSuccessModal() {
-            document.getElementById('paymentSuccessOverlay').style.display = 'none';
-        }
-    </script>
-    <?php endif; ?>
 </body>
 </html>

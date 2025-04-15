@@ -16,11 +16,6 @@
           </a>
       </li>
         <li>
-            <a href="admin_payments.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'admin_payments.php' ? 'active' : ''; ?>">
-                <i class="fas fa-credit-card"></i> Payments
-            </a>
-        </li>
-        <li>
             <a href="admin_content.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'admin_content.php' ? 'active' : ''; ?>">
                 <i class="fas fa-edit"></i> Content Management
             </a>
