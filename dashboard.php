@@ -1,6 +1,5 @@
 <?php
 // Sertakan file konfigurasi
-
 require_once 'config.php';
 
 // Pastikan user sudah login
@@ -25,6 +24,12 @@ $profile = $profile_result->fetch_assoc();
 
 // Check if profile is complete
 $profile_complete = ($profile && !empty($profile['interests']) && !empty($profile['bio']));
+
+// Update user's last activity
+$update_activity_sql = "UPDATE users SET last_activity = NOW() WHERE id = ?";
+$update_activity_stmt = $conn->prepare($update_activity_sql);
+$update_activity_stmt->bind_param("i", $user_id);
+$update_activity_stmt->execute();
 
 // Handle profile update
 $profile_message = '';
@@ -332,6 +337,7 @@ $test_taken_stmt->bind_param("i", $user_id);
 $test_taken_stmt->execute();
 $test_taken_result = $test_taken_stmt->get_result();
 $test_taken = ($test_taken_result->num_rows > 0);
+$test_results = $test_taken ? $test_taken_result->fetch_assoc() : null;
 
 $questions_sql = "SELECT * FROM compatibility_questions";
 $questions_result = $conn->query($questions_sql);
@@ -365,22 +371,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_test'])) {
     $major = $profile['major'] ?? '';
     $interests = $profile['interests'] ?? '';
     
-    // Save test results
-    $test_sql = "INSERT INTO compatibility_results (user_id, personality_score, major, interests, answers) 
-                VALUES (?, ?, ?, ?, ?)";
-    $test_stmt = $conn->prepare($test_sql);
-    $answers_json = json_encode($answers);
-    $test_stmt->bind_param("idsss", $user_id, $personality_score, $major, $interests, $answers_json);
-    
-    if ($test_stmt->execute()) {
-        $test_message = 'Compatibility test completed! Finding matches...';
-        $test_taken = true;
+    // Check if already taken test
+    if ($test_taken) {
+        // Update test
+        $update_sql = "UPDATE compatibility_results SET 
+                      personality_score = ?, 
+                      major = ?, 
+                      interests = ?, 
+                      answers = ?
+                      WHERE user_id = ?";
+        $update_stmt = $conn->prepare($update_sql);
+        $answers_json = json_encode($answers);
+        $update_stmt->bind_param("dsssi", $personality_score, $major, $interests, $answers_json, $user_id);
         
-        // Find compatible matches
-        header("Location: dashboard.php");
-        exit();
+        if ($update_stmt->execute()) {
+            $test_message = 'Compatibility test updated! Finding new matches...';
+            $test_taken = true;
+            
+            // Refresh test results
+            $test_taken_stmt->execute();
+            $test_taken_result = $test_taken_stmt->get_result();
+            $test_results = $test_taken_result->fetch_assoc();
+            
+            // Redirect to dashboard
+            header("Location: dashboard.php?page=compatibility");
+            exit();
+        } else {
+            $test_message = 'Error updating test results: ' . $conn->error;
+        }
     } else {
-        $test_message = 'Error saving test results: ' . $conn->error;
+        // Save test results
+        $test_sql = "INSERT INTO compatibility_results (user_id, personality_score, major, interests, answers) 
+                    VALUES (?, ?, ?, ?, ?)";
+        $test_stmt = $conn->prepare($test_sql);
+        $answers_json = json_encode($answers);
+        $test_stmt->bind_param("idsss", $user_id, $personality_score, $major, $interests, $answers_json);
+        
+        if ($test_stmt->execute()) {
+            $test_message = 'Compatibility test completed! Finding matches...';
+            $test_taken = true;
+            
+            // Refresh test results
+            $test_taken_stmt->execute();
+            $test_taken_result = $test_taken_stmt->get_result();
+            $test_results = $test_taken_result->fetch_assoc();
+            
+            // Redirect to dashboard
+            header("Location: dashboard.php?page=compatibility");
+            exit();
+        } else {
+            $test_message = 'Error saving test results: ' . $conn->error;
+        }
     }
 }
 
@@ -390,10 +431,10 @@ if ($test_taken) {
     $matches_sql = "SELECT u.id, u.name, p.profile_pic, p.bio, p.major, p.interests,
                ABS(IFNULL(cr.personality_score, 0) - ?) as personality_diff,
                CASE WHEN cr.major = ? THEN 30 ELSE 0 END as major_match,
-               CASE WHEN INSTR(LOWER(IFNULL(cr.interests, '')), LOWER(IFNULL(?, ''))) > 0 THEN 40 ELSE 0 END as interests_match,
+               CASE WHEN LOWER(IFNULL(cr.interests, '')) LIKE CONCAT('%', LOWER(IFNULL(?, '')), '%') THEN 40 ELSE 0 END as interests_match,
                (100 - ABS(IFNULL(cr.personality_score, 0) - ?) * 0.3 + 
                CASE WHEN cr.major = ? THEN 30 ELSE 0 END + 
-               CASE WHEN INSTR(LOWER(IFNULL(cr.interests, '')), LOWER(IFNULL(?, ''))) > 0 THEN 40 ELSE 0 END) as compatibility_score
+               CASE WHEN LOWER(IFNULL(cr.interests, '')) LIKE CONCAT('%', LOWER(IFNULL(?, '')), '%') THEN 40 ELSE 0 END) as compatibility_score
                FROM compatibility_results cr
                JOIN users u ON cr.user_id = u.id
                LEFT JOIN profiles p ON u.id = p.user_id
@@ -401,10 +442,18 @@ if ($test_taken) {
                ORDER BY compatibility_score DESC
                LIMIT 15";
     $matches_stmt = $conn->prepare($matches_sql);
-    $matches_stmt->bind_param("iiiiiii", $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id);
+    
+    // Get user's test data
+    $personality_score = $test_results['personality_score'];
+    $user_major = $test_results['major'] ?? '';
+    $user_interests = $test_results['interests'] ?? '';
+    
+    $matches_stmt->bind_param("dsdsssi", $personality_score, $user_major, $user_interests, 
+                           $personality_score, $user_major, $user_interests, $user_id);
     $matches_stmt->execute();
-    $compatible_matches_result = $matches_stmt->get_result();
-    while ($row = $compatible_matches_result->fetch_assoc()) {
+    $matches_result = $matches_stmt->get_result();
+    
+    while ($row = $matches_result->fetch_assoc()) {
         $compatible_matches[] = $row;
     }
 }
@@ -641,8 +690,7 @@ nav ul li a:hover {
 .page-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    align-items: center;margin-bottom: 20px;
 }
 
 .page-header h3 {
@@ -1414,29 +1462,6 @@ input:checked + .toggle-slider:before {
     border-top: 1px solid var(--border-color);
 }
 
-/* Table Styling */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-th, td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-}
-
-th {
-    background-color: rgba(0, 0, 0, 0.03);
-    font-weight: 600;
-    color: var(--text-color);
-}
-
-tr:hover {
-    background-color: rgba(0, 0, 0, 0.02);
-}
-
 /* Scrollbar Customization */
 ::-webkit-scrollbar {
     width: 10px;
@@ -1453,6 +1478,86 @@ tr:hover {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--accent);
+}
+
+/* Matches Styling */
+.matches-container {
+    margin-bottom: 30px;
+}
+
+.matches-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.match-card {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.match-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.match-image {
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+.match-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+}
+
+.match-card:hover .match-image img {
+    transform: scale(1.05);
+}
+
+.match-info {
+    padding: 20px;
+}
+
+.match-name {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: var(--text-color);
+}
+
+.match-bio {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 15px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 60px;
+}
+
+.match-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.empty-matches {
+    text-align: center;
+    padding: 40px 0;
+}
+
+.empty-icon {
+    font-size: 50px;
+    color: var(--secondary);
+    margin-bottom: 20px;
 }
 
 /* Media Queries */
@@ -1491,22 +1596,12 @@ tr:hover {
         justify-content: center;
     }
     
-    .tabs {
-        flex-direction: column;
-        border-bottom: none;
-    }
-    
-    .tab {
-        padding: 15px;
-        border-bottom: 1px solid var(--border-color);
-    }
-    
-    .tab.active {
-        border-bottom: 1px solid var(--primary);
-    }
-    
-    .features-grid {
+    .matches-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .match-actions {
+        flex-direction: column;
     }
 }
 
@@ -1592,11 +1687,6 @@ tr:hover {
                         <li>
                             <a href="?page=matches" class="<?php echo $page === 'matches' ? 'active' : ''; ?>">
                                 <i class="fas fa-heart"></i> Pasangan
-                            </a>
-                        </li>
-                        <li>
-                            <a href="?page=payments" class="<?php echo $page === 'payments' ? 'active' : ''; ?>">
-                                <i class="fas fa-credit-card"></i> Pembayaran
                             </a>
                         </li>
                     </ul>
@@ -1689,7 +1779,7 @@ tr:hover {
                             <div class="card-header">
                                 <h3>Fitur Utama</h3>
                             </div>
-                            <div class="features-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+                            <div class="features-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top:20px;">
                                 <div class="feature-box" style="text-align: center; padding: 20px; background-color: var(--bg-color); border-radius: 10px;">
                                     <i class="fas fa-mask" style="font-size: 40px; color: var(--primary); margin-bottom: 15px;"></i>
                                     <h4>Anonymous Crush Menfess</h4>
@@ -1711,925 +1801,424 @@ tr:hover {
                             </div>
                         </div>
                     
-<?php elseif ($page === 'profile'): ?>
-    <div class="dashboard-header">
-        <h2>Profil</h2>
-        <p>Kelola informasi profil Anda untuk meningkatkan peluang menemukan pasangan yang cocok.</p>
-    </div>
-    
-    <?php if (!empty($profile_message)): ?>
-    <div class="alert <?php echo strpos($profile_message, 'success') !== false ? 'alert-success' : 'alert-danger'; ?>">
-        <i class="<?php echo strpos($profile_message, 'success') !== false ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'; ?>"></i>
-        <?php echo $profile_message; ?>
-    </div>
-    <?php endif; ?>
-    
-    <div class="card">
-        <div class="card-header">
-            <h3>Informasi Profil</h3>
-        </div>
-        
-        <div class="profile-header">
-            <div class="profile-pic">
-                <img src="<?php echo !empty($profile['profile_pic']) ? htmlspecialchars($profile['profile_pic']) : '../assets/images/user_profile.png'; ?>" alt="Profile Picture">
-                <label for="profile_pic" class="edit-pic-button">
-                    <i class="fas fa-camera"></i>
-                </label>
-            </div>
-            <div class="profile-info">
-                <h3><?php echo htmlspecialchars($user['name']); ?></h3>
-                <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($user['email']); ?></p>
-                <?php if(!empty($profile['major'])): ?>
-                <p><i class="fas fa-graduation-cap"></i> <?php echo htmlspecialchars($profile['major']); ?></p>
-                <?php endif; ?>
-            </div>
-        </div>
-        
-        <div class="profile-completion">
-            <?php
-            // Calculate profile completion percentage
-            $total_fields = 5; // Name, email, bio, interests, major
-            $filled_fields = 2; // Name and email are always filled
-            
-            if (!empty($profile)) {
-                if (!empty($profile['bio'])) $filled_fields++;
-                if (!empty($profile['interests'])) $filled_fields++;
-                if (!empty($profile['major'])) $filled_fields++;
-            }
-            
-            $completion_percentage = round(($filled_fields / $total_fields) * 100);
-            ?>
-            <div class="completion-text">
-                <span>Kelengkapan Profil</span>
-                <span><?php echo $completion_percentage; ?>%</span>
-            </div>
-            <div class="completion-bar">
-                <div class="completion-progress" style="width: <?php echo $completion_percentage; ?>%;"></div>
-            </div>
-        </div>
-        
-        <div class="profile-tabs">
-            <div class="profile-tab active" data-tab="basic">Informasi Dasar</div>
-            <div class="profile-tab" data-tab="details">Detail Diri</div>
-            <div class="profile-tab" data-tab="privacy">Privasi</div>
-        </div>
-        
-        <form method="post" enctype="multipart/form-data">
-            <!-- Basic Information Tab -->
-            <div class="tab-content active" id="basic-tab">
-                <div class="form-group">
-                    <label for="name">Nama Lengkap</label>
-                    <input type="text" id="name" name="name" class="form-control" value="<?php echo htmlspecialchars($user['name']); ?>">
-                </div>
-                
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" class="form-control" value="<?php echo htmlspecialchars($user['email']); ?>" readonly>
-                    <div class="help-text">Email tidak dapat diubah karena digunakan untuk verifikasi.</div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="major">Jurusan</label>
-                    <select id="major" name="major" class="form-control">
-                        <option value="">-- Pilih Jurusan --</option>
-                        <option value="Computer Science" <?php echo ($profile && $profile['major'] === 'Computer Science') ? 'selected' : ''; ?>>Computer Science</option>
-                        <option value="Business" <?php echo ($profile && $profile['major'] === 'Business') ? 'selected' : ''; ?>>Business</option>
-                        <option value="Law" <?php echo ($profile && $profile['major'] === 'Law') ? 'selected' : ''; ?>>Law</option>
-                        <option value="Medicine" <?php echo ($profile && $profile['major'] === 'Medicine') ? 'selected' : ''; ?>>Medicine</option>
-                        <option value="Engineering" <?php echo ($profile && $profile['major'] === 'Engineering') ? 'selected' : ''; ?>>Engineering</option>
-                        <option value="Graphic Design" <?php echo ($profile && $profile['major'] === 'Graphic Design') ? 'selected' : ''; ?>>Graphic Design</option>
-                        <option value="Psychology" <?php echo ($profile && $profile['major'] === 'Psychology') ? 'selected' : ''; ?>>Psychology</option>
-                        <option value="Communication" <?php echo ($profile && $profile['major'] === 'Communication') ? 'selected' : ''; ?>>Communication</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="profile_pic">Foto Profil</label>
-                    <div class="file-upload">
-                        <input type="text" class="form-control" readonly placeholder="Pilih file foto..." id="file-name">
-                        <label for="profile_pic" class="file-upload-btn">Browse</label>
-                    </div>
-                    <input type="file" id="profile_pic" name="profile_pic" style="display: none;">
-                    <div class="help-text">Format yang didukung: JPG, PNG, GIF. Maksimal 2MB.</div>
-                </div>
-            </div>
-            
-            <!-- Details Tab -->
-            <div class="tab-content" id="details-tab">
-                <div class="form-group">
-                    <label for="bio">Bio</label>
-                    <textarea id="bio" name="bio" class="form-control" rows="5" placeholder="Ceritakan tentang dirimu..."><?php echo $profile ? htmlspecialchars($profile['bio']) : ''; ?></textarea>
-                    <div class="help-text">Maksimal 500 karakter. Ceritakan tentang hobi, kesukaan, dan hal menarik tentang dirimu.</div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="interests">Minat & Hobi</label>
-                    <textarea id="interests" name="interests" class="form-control" rows="3" placeholder="Masukkan minat dan hobi (pisahkan dengan koma)"><?php echo $profile ? htmlspecialchars($profile['interests']) : ''; ?></textarea>
-                    <div class="help-text">Contoh: Musik, Film, Fotografi, Hiking, Coding</div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Minat yang Ditambahkan</label>
-                    <div class="interests-container" id="interests-display">
-                        <?php 
-                        if ($profile && !empty($profile['interests'])) {
-                            $interests_array = explode(',', $profile['interests']);
-                            foreach ($interests_array as $interest) {
-                                $interest = trim($interest);
-                                if (!empty($interest)) {
-                                    echo '<span class="interest-tag">' . htmlspecialchars($interest) . ' <i class="fas fa-times"></i></span>';
+                    <?php elseif ($page === 'profile'): ?>
+                        <div class="dashboard-header">
+                            <h2>Profil</h2>
+                            <p>Kelola informasi profil Anda untuk meningkatkan peluang menemukan pasangan yang cocok.</p>
+                        </div>
+                        
+                        <?php if (!empty($profile_message)): ?>
+                        <div class="alert <?php echo strpos($profile_message, 'success') !== false ? 'alert-success' : 'alert-danger'; ?>">
+                            <i class="<?php echo strpos($profile_message, 'success') !== false ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'; ?>"></i>
+                            <?php echo $profile_message; ?>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Informasi Profil</h3>
+                            </div>
+                            
+                            <div class="profile-header">
+                                <div class="profile-pic">
+                                    <img src="<?php echo !empty($profile['profile_pic']) ? htmlspecialchars($profile['profile_pic']) : 'assets/images/user_profile.png'; ?>" alt="Profile Picture">
+                                    <label for="profile_pic" class="edit-pic-button">
+                                        <i class="fas fa-camera"></i>
+                                    </label>
+                                </div>
+                                <div class="profile-info">
+                                    <h3><?php echo htmlspecialchars($user['name']); ?></h3>
+                                    <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($user['email']); ?></p>
+                                    <?php if(!empty($profile['major'])): ?>
+                                    <p><i class="fas fa-graduation-cap"></i> <?php echo htmlspecialchars($profile['major']); ?></p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            
+                            <div class="profile-completion">
+                                <?php
+                                // Calculate profile completion percentage
+                                $total_fields = 5; // Name, email, bio, interests, major
+                                $filled_fields = 2; // Name and email are always filled
+                                
+                                if (!empty($profile)) {
+                                    if (!empty($profile['bio'])) $filled_fields++;
+                                    if (!empty($profile['interests'])) $filled_fields++;
+                                    if (!empty($profile['major'])) $filled_fields++;
                                 }
-                            }
-                        } else {
-                            echo '<span class="text-muted">Belum ada minat yang ditambahkan</span>';
-                        }
-                        ?>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="looking_for">Mencari</label>
-                    <select id="looking_for" name="looking_for" class="form-control">
-                        <option value="friends" <?php echo ($profile && $profile['looking_for'] === 'friends') ? 'selected' : ''; ?>>Teman</option>
-                        <option value="study_partner" <?php echo ($profile && $profile['looking_for'] === 'study_partner') ? 'selected' : ''; ?>>Partner Belajar</option>
-                        <option value="romance" <?php echo ($profile && $profile['looking_for'] === 'romance') ? 'selected' : ''; ?>>Romansa</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- Privacy Tab -->
-                        <div class="privacy-option">
-                <h4>
-                    Tampilkan Profil Dalam Pencarian
-                    <label class="toggle">
-                        <input type="checkbox" name="searchable" value="1" <?php echo ($profile && isset($profile['searchable']) && $profile['searchable'] == 1) ? 'checked' : ''; ?>>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </h4>
-                <p>Izinkan pengguna lain menemukan profil Anda dalam hasil pencarian dan rekomendasi kecocokan.</p>
-            </div>
-                
-                <div class="privacy-option">
-                    <h4>
-                        Tampilkan Status Online
-                        <label class="toggle">
-                            <input type="checkbox" name="show_online" <?php echo ($profile && isset($profile['show_online']) && $profile['show_online'] == 1) ? 'checked' : ''; ?>>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </h4>
-                    <p>Tampilkan status online Anda kepada pengguna lain.</p>
-                </div>
-                
-                <div class="privacy-option">
-                    <h4>
-                        Terima Pesan dari Siapa Saja
-                        <label class="toggle">
-                            <input type="checkbox" name="allow_messages" <?php echo ($profile && isset($profile['allow_messages']) && $profile['allow_messages'] == 1) ? 'checked' : ''; ?>>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </h4>
-                    <p>Izinkan pesan dari pengguna yang belum terhubung dengan Anda.</p>
-                </div>
-                
-                <div class="privacy-option">
-                    <h4>
-                        Tampilkan Jurusan
-                        <label class="toggle">
-                            <input type="checkbox" name="show_major" <?php echo ($profile && isset($profile['show_major']) && $profile['show_major'] == 1) ? 'checked' : ''; ?>>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </h4>
-                    <p>Tampilkan informasi jurusan Anda kepada pengguna lain.</p>
-                </div>
-            </div>
-            
-            <div class="submit-wrapper">
-                <button type="submit" name="update_profile" class="btn">
-                    <i class="fas fa-save"></i> Simpan Profil
-                </button>
-            </div>
-        </form>
-    </div>
-    
-    <script>
-        // Handle tab switching
-        document.querySelectorAll('.profile-tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                // Update active tab
-                document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Show corresponding content
-                const tabName = this.getAttribute('data-tab');
-                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                document.getElementById(tabName + '-tab').classList.add('active');
-            });
-        });
-        
-        // Handle file upload preview
-        document.getElementById('profile_pic').addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                const fileName = this.files[0].name;
-                document.getElementById('file-name').value = fileName;
-                
-                // Optional: Preview the image
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const profilePic = document.querySelector('.profile-pic img');
-                    profilePic.src = e.target.result;
-                }
-                reader.readAsDataURL(this.files[0]);
-            }
-        });
-        
-        // Handle dynamic interests display
-        const interestsInput = document.getElementById('interests');
-        const interestsDisplay = document.getElementById('interests-display');
-        
-        interestsInput.addEventListener('input', function() {
-            const interests = this.value.split(',').filter(interest => interest.trim() !== '');
-            
-            if (interests.length > 0) {
-                interestsDisplay.innerHTML = '';
-                
-                interests.forEach(interest => {
-                    const tag = document.createElement('span');
-                    tag.className = 'interest-tag';
-                    tag.innerHTML = interest.trim() + ' <i class="fas fa-times"></i>';
-                    interestsDisplay.appendChild(tag);
-                    
-                    // Add event listener to remove tag when clicked
-                    tag.querySelector('i').addEventListener('click', function() {
-                        const removedInterest = this.parentNode.textContent.trim().slice(0, -1).trim();
-                        const currentInterests = interestsInput.value.split(',').map(i => i.trim());
-                        const filteredInterests = currentInterests.filter(i => i !== removedInterest);
-                        interestsInput.value = filteredInterests.join(', ');
-                        this.parentNode.remove();
-                        
-                        if (interestsDisplay.children.length === 0) {
-                            interestsDisplay.innerHTML = '<span class="text-muted">Belum ada minat yang ditambahkan</span>';
-                        }
-                    });
-                });
-            } else {
-                interestsDisplay.innerHTML = '<span class="text-muted">Belum ada minat yang ditambahkan</span>';
-            }
-        });
-        
-        // Add click event to existing interest tags
-        document.querySelectorAll('.interest-tag i').forEach(icon => {
-            icon.addEventListener('click', function() {
-                const removedInterest = this.parentNode.textContent.trim().slice(0, -1).trim();
-                const currentInterests = interestsInput.value.split(',').map(i => i.trim());
-                const filteredInterests = currentInterests.filter(i => i !== removedInterest);
-                interestsInput.value = filteredInterests.join(', ');
-                this.parentNode.remove();
-                
-                if (interestsDisplay.children.length === 0) {
-                    interestsDisplay.innerHTML = '<span class="text-muted">Belum ada minat yang ditambahkan</span>';
-                }
-            });
-        });
-    </script>
-                        
-                   <?php elseif ($page === 'menfess'): ?>
-    <div class="dashboard-header">
-        <h2>Crush Menfess</h2>
-        <p>Kirim pesan anonim ke crush Anda. Jika keduanya saling suka, nama akan terungkap!</p>
-    </div>
-    
-    <?php if (!empty($menfess_message)): ?>
-    <div class="alert <?php echo strpos($menfess_message, 'success') !== false ? 'alert-success' : 'alert-danger'; ?>">
-        <?php echo $menfess_message; ?>
-    </div>
-    <?php endif; ?>
-    
-    <div class="card">
-        <div class="card-header">
-            <h3>Kirim Menfess</h3>
-        </div>
-        <div class="card-body">
-            <p class="card-description">
-                Kirim pesan rahasia ke crush-mu tanpa mereka tahu siapa kamu! Jika mereka juga menyukaimu, identitas kalian akan terungkap.
-            </p>
-            
-            <form id="menfessForm" method="post" action="dashboard.php?page=menfess">
-                <div class="form-group">
-                    <label for="crush_search">Cari Crush</label>
-                    <div class="search-container">
-                        <input type="text" id="crush_search" class="form-control" placeholder="Ketik nama crush..." autocomplete="off">
-                        <div class="search-icon">
-                            <i class="fas fa-search"></i>
-                        </div>
-                        <div id="search-results" class="search-results"></div>
-                    </div>
-                    <input type="hidden" name="crush_id" id="crush_id">
-                </div>
-                
-                <div class="form-group">
-                    <label for="menfess_message">Pesan Menfess</label>
-                    <textarea 
-                        id="menfess_message" 
-                        name="message" 
-                        class="form-control" 
-                        rows="4" 
-                        placeholder="Tulis pesan rahasia untuk crush-mu..."
-                        required></textarea>
-                    <div class="character-counter">
-                        <span id="char-count">0</span>/280
-                    </div>
-                </div>
-                
-                <div class="form-buttons">
-                    <button type="submit" name="send_menfess" class="btn">
-                        <i class="fas fa-paper-plane"></i> Kirim Menfess
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Tampilan tab untuk menfess yang dikirim/diterima -->
-    <div class="card">
-        <div class="card-header">
-            <h3>Menfess Manager</h3>
-        </div>
-        <div class="menfess-list">
-            <div class="menfess-tabs">
-                <div class="menfess-tab active" data-tab="received-menfess">Diterima</div>
-                <div class="menfess-tab" data-tab="sent-menfess">Dikirim</div>
-            </div>
-            
-            <!-- Menfess diterima -->
-            <div id="received-menfess" class="menfess-content active">
-                <?php
-                $received_menfess = array_filter($menfess_messages, function($msg) {
-                    return $msg['type'] === 'received';
-                });
-                
-                if (empty($received_menfess)):
-                ?>
-                <div class="empty-menfess">
-                    <i class="fas fa-inbox"></i>
-                    <p>Belum ada pesan menfess yang diterima</p>
-                </div>
-                <?php else: ?>
-                <?php foreach ($received_menfess as $menfess): 
-                    // Periksa jika pengirim sudah menyukai pesan ini
-                    $sender_liked = false;
-                    if (isset($menfess['sender_id'])) {
-                        $check_sender_like_sql = "SELECT COUNT(*) as count FROM menfess_likes 
-                                               WHERE menfess_id = ? AND user_id = ?";
-                        $check_stmt = $conn->prepare($check_sender_like_sql);
-                        $check_stmt->bind_param("ii", $menfess['id'], $menfess['sender_id']);
-                        $check_stmt->execute();
-                        $like_result = $check_stmt->get_result()->fetch_assoc();
-                        $sender_liked = ($like_result['count'] > 0);
-                    }
-                ?>
-                <div class="menfess-card received">
-                    <div class="menfess-header">
-                        <div class="menfess-to-from">
-                            <?php if (isset($menfess['is_revealed']) && $menfess['is_revealed']): ?>
-                            <i class="fas fa-user"></i> 
-                            <span>Dari: <?php echo htmlspecialchars(getSenderName($conn, $menfess['sender_id'])); ?></span>
-                            <?php else: ?>
-                            <i class="fas fa-mask"></i> 
-                            <span>Penggemar Rahasia</span>
-                            <?php endif; ?>
-                        </div>
-                        <div class="menfess-time"><?php echo date('d M Y', strtotime($menfess['created_at'])); ?></div>
-                    </div>
-                    <div class="menfess-message">
-                        <?php echo nl2br(htmlspecialchars($menfess['message'])); ?>
-                    </div>
-                    <div class="menfess-actions">
-                        <form method="post">
-                            <input type="hidden" name="menfess_id" value="<?php echo $menfess['id']; ?>">
-                            <button type="submit" name="like_menfess" class="menfess-like <?php echo $menfess['liked'] ? 'liked' : ''; ?>">
-                                <i class="<?php echo $menfess['liked'] ? 'fas' : 'far'; ?> fa-heart"></i>
-                                <span><?php echo $menfess['liked'] ? 'Disukai' : 'Suka'; ?></span>
-                            </button>
-                        </form>
-                        <div class="menfess-status">
-                            <?php if ($sender_liked): ?>
-                            <span><i class="fas fa-heart" style="color: var(--primary);"></i> Pengirim menyukai pesan ini</span>
-                            <?php endif; ?>
-                            
-                            <?php if (isset($menfess['is_revealed']) && $menfess['is_revealed']): ?>
-                            <div class="menfess-match-badge">
-                                <i class="fas fa-check-circle"></i> Match!
+                                
+                                $completion_percentage = round(($filled_fields / $total_fields) * 100);
+                                ?>
+                                <div class="completion-text">
+                                    <span>Kelengkapan Profil</span>
+                                    <span><?php echo $completion_percentage; ?>%</span>
+                                </div>
+                                <div class="completion-bar">
+                                    <div class="completion-progress" style="width: <?php echo $completion_percentage; ?>%;"></div>
+                                </div>
                             </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-            
-            <!-- Menfess dikirim -->
-            <div id="sent-menfess" class="menfess-content">
-                <?php
-                $sent_menfess = array_filter($menfess_messages, function($msg) {
-                    return $msg['type'] === 'sent';
-                });
-                
-                if (empty($sent_menfess)):
-                ?>
-                <div class="empty-menfess">
-                    <i class="fas fa-paper-plane"></i>
-                    <p>Belum ada pesan menfess yang dikirim</p>
-                </div>
-                <?php else: ?>
-                <?php foreach ($sent_menfess as $menfess): 
-                    // Periksa jika penerima sudah menyukai pesan ini
-                    $receiver_liked = false;
-                    if (isset($menfess['receiver_id'])) {
-                        $check_receiver_like_sql = "SELECT COUNT(*) as count FROM menfess_likes 
-                                                 WHERE menfess_id = ? AND user_id = ?";
-                        $check_stmt = $conn->prepare($check_receiver_like_sql);
-                        $check_stmt->bind_param("ii", $menfess['id'], $menfess['receiver_id']);
-                        $check_stmt->execute();
-                        $like_result = $check_stmt->get_result()->fetch_assoc();
-                        $receiver_liked = ($like_result['count'] > 0);
-                    }
-                ?>
-                <div class="menfess-card sent">
-                    <div class="menfess-header">
-                        <div class="menfess-to-from">
-                            <i class="fas fa-paper-plane"></i> 
-                            <span>Kepada: <?php echo isset($menfess['receiver_name']) ? htmlspecialchars($menfess['receiver_name']) : 'Unknown'; ?></span>
-                        </div>
-                        <div class="menfess-time"><?php echo date('d M Y', strtotime($menfess['created_at'])); ?></div>
-                    </div>
-                    <div class="menfess-message">
-                        <?php echo nl2br(htmlspecialchars($menfess['message'])); ?>
-                    </div>
-                    <div class="menfess-actions">
-                        <div class="menfess-status">
-                            <?php if (isset($menfess['liked']) && $menfess['liked']): ?>
-                            <?php endif; ?>
-                        </div>
-                        <div>
-                            <?php if ($receiver_liked): ?>
-                            <span><i class="fas fa-heart" style="color: var(--primary);"></i> Penerima menyukai pesan Anda</span>
-                            <?php endif; ?>
                             
-                            <?php if (isset($menfess['is_revealed']) && $menfess['is_revealed']): ?>
-                            <div class="menfess-match-badge">
-                                <i class="fas fa-check-circle"></i> Match!
+                            <div class="profile-tabs">
+                                <div class="profile-tab active" data-tab="basic">Informasi Dasar</div>
+                                <div class="profile-tab" data-tab="details">Detail Diri</div>
+                                <div class="profile-tab" data-tab="privacy">Privasi</div>
                             </div>
-                            <?php endif; ?>
+                            
+                            <form method="post" enctype="multipart/form-data">
+                                <!-- Basic Information Tab -->
+                                <div class="tab-content active" id="basic-tab">
+                                    <div class="form-group">
+                                        <label for="name">Nama Lengkap</label>
+                                        <input type="text" id="name" name="name" class="form-control" value="<?php echo htmlspecialchars($user['name']); ?>">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="email">Email</label>
+                                        <input type="email" id="email" name="email" class="form-control" value="<?php echo htmlspecialchars($user['email']); ?>" readonly>
+                                        <div class="help-text">Email tidak dapat diubah karena digunakan untuk verifikasi.</div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="major">Jurusan</label>
+                                        <select id="major" name="major" class="form-control">
+                                            <option value="">-- Pilih Jurusan --</option>
+                                            <option value="Computer Science" <?php echo ($profile && $profile['major'] === 'Computer Science') ? 'selected' : ''; ?>>Computer Science</option>
+                                            <option value="Business" <?php echo ($profile && $profile['major'] === 'Business') ? 'selected' : ''; ?>>Business</option>
+                                            <option value="Law" <?php echo ($profile && $profile['major'] === 'Law') ? 'selected' : ''; ?>>Law</option>
+                                            <option value="Medicine" <?php echo ($profile && $profile['major'] === 'Medicine') ? 'selected' : ''; ?>>Medicine</option>
+                                            <option value="Engineering" <?php echo ($profile && $profile['major'] === 'Engineering') ? 'selected' : ''; ?>>Engineering</option>
+                                            <option value="Graphic Design" <?php echo ($profile && $profile['major'] === 'Graphic Design') ? 'selected' : ''; ?>>Graphic Design</option>
+                                            <option value="Psychology" <?php echo ($profile && $profile['major'] === 'Psychology') ? 'selected' : ''; ?>>Psychology</option>
+                                            <option value="Communication" <?php echo ($profile && $profile['major'] === 'Communication') ? 'selected' : ''; ?>>Communication</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="profile_pic">Foto Profil</label>
+                                        <div class="file-upload">
+                                            <input type="text" class="form-control" readonly placeholder="Pilih file foto..." id="file-name">
+                                            <label for="profile_pic" class="file-upload-btn">Browse</label>
+                                        </div>
+                                        <input type="file" id="profile_pic" name="profile_pic" style="display: none;">
+                                        <div class="help-text">Format yang didukung: JPG, PNG, GIF. Maksimal 2MB.</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Details Tab -->
+                                <div class="tab-content" id="details-tab">
+                                    <div class="form-group">
+                                        <label for="bio">Bio</label>
+                                        <textarea id="bio" name="bio" class="form-control" rows="5" placeholder="Ceritakan tentang dirimu..."><?php echo $profile ? htmlspecialchars($profile['bio']) : ''; ?></textarea>
+                                        <div class="help-text">Maksimal 500 karakter. Ceritakan tentang hobi, kesukaan, dan hal menarik tentang dirimu.</div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="interests">Minat & Hobi</label>
+                                        <textarea id="interests" name="interests" class="form-control" rows="3" placeholder="Masukkan minat dan hobi (pisahkan dengan koma)"><?php echo $profile ? htmlspecialchars($profile['interests']) : ''; ?></textarea>
+                                        <div class="help-text">Contoh: Musik, Film, Fotografi, Hiking, Coding</div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Minat yang Ditambahkan</label>
+                                        <div class="interests-container" id="interests-display">
+                                            <?php 
+                                            if ($profile && !empty($profile['interests'])) {
+                                                $interests_array = explode(',', $profile['interests']);
+                                                foreach ($interests_array as $interest) {
+                                                    $interest = trim($interest);
+                                                    if (!empty($interest)) {
+                                                        echo '<span class="interest-tag">' . htmlspecialchars($interest) . ' <i class="fas fa-times"></i></span>';
+                                                    }
+                                                }
+                                            } else {
+                                                echo '<span class="text-muted">Belum ada minat yang ditambahkan</span>';
+                                            }
+                                            ?>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="looking_for">Mencari</label>
+                                        <select id="looking_for" name="looking_for" class="form-control">
+                                            <option value="friends" <?php echo ($profile && $profile['looking_for'] === 'friends') ? 'selected' : ''; ?>>Teman</option>
+                                            <option value="study_partner" <?php echo ($profile && $profile['looking_for'] === 'study_partner') ? 'selected' : ''; ?>>Partner Belajar</option>
+                                            <option value="romance" <?php echo ($profile && $profile['looking_for'] === 'romance') ? 'selected' : ''; ?>>Romansa</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Privacy Tab -->
+                                <div class="tab-content" id="privacy-tab">
+                                    <div class="privacy-option">
+                                        <h4>
+                                            Tampilkan Profil Dalam Pencarian
+                                            <label class="toggle">
+                                                <input type="checkbox" name="searchable" value="1" <?php echo ($profile && isset($profile['searchable']) && $profile['searchable'] == 1) ? 'checked' : ''; ?>>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </h4>
+                                        <p>Izinkan pengguna lain menemukan profil Anda dalam hasil pencarian dan rekomendasi kecocokan.</p>
+                                    </div>
+                                    
+                                    <div class="privacy-option">
+                                        <h4>
+                                            Tampilkan Status Online
+                                            <label class="toggle">
+                                                <input type="checkbox" name="show_online" <?php echo ($profile && isset($profile['show_online']) && $profile['show_online'] == 1) ? 'checked' : ''; ?>>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </h4>
+                                        <p>Tampilkan status online Anda kepada pengguna lain.</p>
+                                    </div>
+                                    
+                                    <div class="privacy-option">
+                                        <h4>
+                                            Terima Pesan dari Siapa Saja
+                                            <label class="toggle">
+                                                <input type="checkbox" name="allow_messages" <?php echo ($profile && isset($profile['allow_messages']) && $profile['allow_messages'] == 1) ? 'checked' : ''; ?>>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </h4>
+                                        <p>Izinkan pesan dari pengguna yang belum terhubung dengan Anda.</p>
+                                    </div>
+                                    
+                                    <div class="privacy-option">
+                                        <h4>
+                                            Tampilkan Jurusan
+                                            <label class="toggle">
+                                                <input type="checkbox" name="show_major" <?php echo ($profile && isset($profile['show_major']) && $profile['show_major'] == 1) ? 'checked' : ''; ?>>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </h4>
+                                        <p>Tampilkan informasi jurusan Anda kepada pengguna lain.</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="submit-wrapper">
+                                    <button type="submit" name="update_profile" class="btn">
+                                        <i class="fas fa-save"></i> Simpan Profil
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
+                        
+                    <?php elseif ($page === 'menfess'): ?>
+                        <div class="dashboard-header">
+                            <h2>Crush Menfess</h2>
+                            <p>Kirim pesan anonim ke crush Anda. Jika keduanya saling suka, nama akan terungkap!</p>
+                        </div>
+                        
+                        <?php if (!empty($menfess_message)): ?>
+                        <div class="alert <?php echo strpos($menfess_message, 'success') !== false ? 'alert-success' : 'alert-danger'; ?>">
+                            <?php echo $menfess_message; ?>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Kirim Menfess</h3>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-description">
+                                    Kirim pesan rahasia ke crush-mu tanpa mereka tahu siapa kamu! Jika mereka juga menyukaimu, identitas kalian akan terungkap.
+                                </p>
+                                
+                                <form id="menfessForm" method="post" action="dashboard.php?page=menfess">
+                                    <div class="form-group">
+                                        <label for="crush_search">Cari Crush</label>
+                                        <div class="search-container">
+                                            <input type="text" id="crush_search" class="form-control" placeholder="Ketik nama crush..." autocomplete="off">
+                                            <div class="search-icon">
+                                                <i class="fas fa-search"></i>
+                                            </div>
+                                            <div id="search-results" class="search-results"></div>
+                                        </div>
+                                        <input type="hidden" name="crush_id" id="crush_id">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="menfess_message">Pesan Menfess</label>
+                                        <textarea 
+                                            id="menfess_message" 
+                                            name="message" 
+                                            class="form-control" 
+                                            rows="4" 
+                                            placeholder="Tulis pesan rahasia untuk crush-mu..."
+                                            required></textarea>
+                                        <div class="character-counter">
+                                            <span id="char-count">0</span>/280
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-buttons">
+                                        <button type="submit" name="send_menfess" class="btn">
+                                            <i class="fas fa-paper-plane"></i> Kirim Menfess
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Tampilan tab untuk menfess yang dikirim/diterima -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Menfess Manager</h3>
+                            </div>
+                            <div class="menfess-list">
+                                <div class="menfess-tabs">
+                                    <div class="menfess-tab active" data-tab="received-menfess">Diterima</div>
+                                    <div class="menfess-tab" data-tab="sent-menfess">Dikirim</div>
+                                </div>
+                                
+                                <!-- Menfess diterima -->
+                                <div id="received-menfess" class="menfess-content active">
+                                    <?php
+                                    $received_menfess = array_filter($menfess_messages, function($msg) {
+                                        return $msg['type'] === 'received';
+                                    });
+                                    
+                                    if (empty($received_menfess)):
+                                    ?>
+                                    <div class="empty-menfess">
+                                        <i class="fas fa-inbox"></i>
+                                        <p>Belum ada pesan menfess yang diterima</p>
+                                    </div>
+                                    <?php else: ?>
+                                    <?php foreach ($received_menfess as $menfess): 
+                                        // Periksa jika pengirim sudah menyukai pesan ini
+                                        $sender_liked = false;
+                                        if (isset($menfess['sender_id'])) {
+                                            $check_sender_like_sql = "SELECT COUNT(*) as count FROM menfess_likes 
+                                                                   WHERE menfess_id = ? AND user_id = ?";
+                                            $check_stmt = $conn->prepare($check_sender_like_sql);
+                                            $check_stmt->bind_param("ii", $menfess['id'], $menfess['sender_id']);
+                                            $check_stmt->execute();
+                                            $like_result = $check_stmt->get_result()->fetch_assoc();
+                                            $sender_liked = ($like_result['count'] > 0);
+                                        }
+                                    ?>
+                                    <div class="menfess-card received">
+                                        <div class="menfess-header">
+                                            <div class="menfess-to-from">
+                                                <?php if (isset($menfess['is_revealed']) && $menfess['is_revealed']): ?>
+                                                <i class="fas fa-user"></i> 
+                                                <span>Dari: <?php 
+                                                    // Get sender name
+                                                    $sender_sql = "SELECT name FROM users WHERE id = ?";
+                                                    $sender_stmt = $conn->prepare($sender_sql);
+                                                    $sender_stmt->bind_param("i", $menfess['sender_id']);
+                                                    $sender_stmt->execute();
+                                                    $sender_result = $sender_stmt->get_result();
+                                                    $sender = $sender_result->fetch_assoc();
+                                                    echo htmlspecialchars($sender['name']); 
+                                                ?></span>
+                                                <?php else: ?>
+                                                <i class="fas fa-mask"></i> 
+                                                <span>Penggemar Rahasia</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="menfess-time"><?php echo date('d M Y', strtotime($menfess['created_at'])); ?></div>
+                                        </div>
+                                        <div class="menfess-message">
+                                            <?php echo nl2br(htmlspecialchars($menfess['message'])); ?>
+                                        </div>
+                                        <div class="menfess-actions">
+                                            <form method="post">
+                                                <input type="hidden" name="menfess_id" value="<?php echo $menfess['id']; ?>">
+                                                <button type="submit" name="like_menfess" class="menfess-like <?php echo $menfess['liked'] ? 'liked' : ''; ?>">
+                                                    <i class="<?php echo $menfess['liked'] ? 'fas' : 'far'; ?> fa-heart"></i>
+                                                    <span><?php echo $menfess['liked'] ? 'Disukai' : 'Suka'; ?></span>
+                                                </button>
+                                            </form>
+                                            <div class="menfess-status">
+                                                <?php if ($sender_liked): ?>
+                                                <span><i class="fas fa-heart" style="color: var(--primary);"></i> Pengirim menyukai pesan ini</span>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (isset($menfess['is_revealed']) && $menfess['is_revealed']): ?>
+                                                <div class="menfess-match-badge">
+                                                    <i class="fas fa-check-circle"></i> Match!
+                                                </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <!-- Menfess dikirim -->
+                                <div id="sent-menfess" class="menfess-content">
+                                    <?php
+                                    $sent_menfess = array_filter($menfess_messages, function($msg) {
+                                        return $msg['type'] === 'sent';
+                                    });
+                                    
+                                    if (empty($sent_menfess)):
+                                    ?>
+                                    <div class="empty-menfess">
+                                        <i class="fas fa-paper-plane"></i>
+                                        <p>Belum ada pesan menfess yang dikirim</p>
+                                    </div>
+                                    <?php else: ?>
+                                    <?php foreach ($sent_menfess as $menfess): 
+                                        // Periksa jika penerima sudah menyukai pesan ini
+                                        $receiver_liked = false;
+                                        if (isset($menfess['receiver_id'])) {
+                                            $check_receiver_like_sql = "SELECT COUNT(*) as count FROM menfess_likes 
+                                                                     WHERE menfess_id = ? AND user_id = ?";
+                                            $check_stmt = $conn->prepare($check_receiver_like_sql);
+                                            $check_stmt->bind_param("ii", $menfess['id'], $menfess['receiver_id']);
+                                            $check_stmt->execute();
+                                            $like_result = $check_stmt->get_result()->fetch_assoc();
+                                            $receiver_liked = ($like_result['count'] > 0);
+                                        }
+                                    ?>
+                                    <div class="menfess-card sent">
+                                        <div class="menfess-header">
+                                            <div class="menfess-to-from">
+                                                <i class="fas fa-paper-plane"></i> 
+                                                <span>Kepada: <?php 
+                                                    // Get receiver name
+                                                    $receiver_sql = "SELECT name FROM users WHERE id = ?";
+                                                    $receiver_stmt = $conn->prepare($receiver_sql);
+                                                    $receiver_stmt->bind_param("i", $menfess['receiver_id']);
+                                                    $receiver_stmt->execute();
+                                                    $receiver_result = $receiver_stmt->get_result();
+                                                    $receiver = $receiver_result->fetch_assoc();
+                                                    echo htmlspecialchars($receiver['name']); 
+                                                ?></span>
+                                            </div>
+                                            <div class="menfess-time"><?php echo date('d M Y', strtotime($menfess['created_at'])); ?></div>
+                                        </div>
+                                        <div class="menfess-message">
+                                            <?php echo nl2br(htmlspecialchars($menfess['message'])); ?>
+                                        </div>
+                                        <div class="menfess-actions">
+                                            <div class="menfess-status">
+                                                <?php if (isset($menfess['liked']) && $menfess['liked']): ?>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div>
+                                                <?php if ($receiver_liked): ?>
+                                                <span><i class="fas fa-heart" style="color: var(--primary);"></i> Penerima menyukai pesan Anda</span>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (isset($menfess['is_revealed']) && $menfess['is_revealed']): ?>
+                                                <div class="menfess-match-badge">
+                                                    <i class="fas fa-check-circle"></i> Match!
+                                                </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
 
-<style>
-    .card-description {
-        margin-bottom: 25px;
-        color: #666;
-        font-size: 15px;
-        line-height: 1.6;
-    }
-
-    .search-container {
-        position: relative;
-        margin-bottom: 5px;
-    }
-
-    .search-icon {
-        position: absolute;
-        right: 15px;
-        top: 12px;
-        color: #999;
-        pointer-events: none;
-    }
-
-    .search-results {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        width: 100%;
-        max-height: 200px;
-        overflow-y: auto;
-        background-color: var(--card-bg);
-        border: 1px solid var(--input-border);
-        border-radius: 5px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        z-index: 1000;
-        display: none;
-    }
-
-    .search-result-item {
-        padding: 12px 15px;
-        border-bottom: 1px solid var(--border-color);
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-    }
-
-    .search-result-item:last-child {
-        border-bottom: none;
-    }
-
-    .search-result-item:hover {
-        background-color: var(--secondary);
-    }
-
-    .search-result-image {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        overflow: hidden;
-        margin-right: 12px;
-        background-color: #f0f0f0;
-    }
-
-    .search-result-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .search-result-info {
-        flex: 1;
-    }
-
-    .search-result-name {
-        font-weight: 500;
-        margin-bottom: 2px;
-    }
-
-    .search-result-detail {
-        font-size: 12px;
-        color: #666;
-    }
-
-    .character-counter {
-        text-align: right;
-        margin-top: 5px;
-        font-size: 12px;
-        color: #999;
-    }
-
-    /* Gaya untuk kartu menfess yang dikirim/diterima */
-    .menfess-list {
-        margin-top: 20px;
-    }
-
-    .menfess-tabs {
-        display: flex;
-        margin-bottom: 20px;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .menfess-tab {
-        flex: 1;
-        text-align: center;
-        padding: 12px;
-        cursor: pointer;
-        transition: all 0.3s;
-        position: relative;
-    }
-
-    .menfess-tab.active {
-        color: var(--primary);
-        font-weight: 500;
-    }
-
-    .menfess-tab.active::after {
-        content: '';
-        position: absolute;
-        bottom: -1px;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background-color: var(--primary);
-    }
-
-    .menfess-content {
-        display: none;
-    }
-
-    .menfess-content.active {
-        display: block;
-        animation: fadeIn 0.4s ease;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .menfess-card {
-        background-color: var(--card-bg);
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 15px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        position: relative;
-        overflow: hidden;
-        transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    .menfess-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-    }
-
-    .menfess-card.sent {
-        background-color: var(--secondary);
-        border-left: 4px solid var(--primary);
-    }
-
-    .menfess-card.received {
-        background-color: #f8f9fa;
-        border-left: 4px solid #adb5bd;
-    }
-
-    [data-theme="dark"] .menfess-card.received {
-        background-color: #252525;
-        border-left-color: #666;
-    }
-
-    .menfess-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-        font-size: 14px;
-    }
-
-    .menfess-to-from {
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-    }
-
-    .menfess-to-from i {
-        margin-right: 8px;
-        color: var(--primary);
-    }
-
-    .menfess-time {
-        color: #999;
-        font-size: 12px;
-    }
-
-    .menfess-message {
-        line-height: 1.6;
-        margin-bottom: 15px;
-    }
-
-    .menfess-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-top: 12px;
-        border-top: 1px solid rgba(0,0,0,0.05);
-    }
-
-    .menfess-like {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: #666;
-        transition: all 0.2s;
-        font-size: 14px;
-    }
-
-    .menfess-like:hover {
-        color: var(--primary);
-    }
-
-    .menfess-like.liked {
-        color: var(--primary);
-    }
-
-    .menfess-like.liked i {
-        transform: scale(1.2);
-    }
-
-    .menfess-status {
-        font-size: 13px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .menfess-match-badge {
-        background-color: var(--primary);
-        color: white;
-        font-size: 12px;
-        padding: 4px 8px;
-        border-radius: 12px;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .empty-menfess {
-        text-align: center;
-        padding: 30px 0;
-        color: #999;
-    }
-
-    .empty-menfess i {
-        font-size: 40px;
-        margin-bottom: 15px;
-        opacity: 0.3;
-    }
-
-    .form-buttons {
-        display: flex;
-        justify-content: flex-end;
-    }
-    
-    /* Responsiveness */
-    @media (max-width: 767px) {
-        .menfess-actions {
-            flex-direction: column;
-            gap: 10px;
-            align-items: flex-start;
-        }
-        
-        .menfess-match-badge {
-            align-self: flex-end;
-        }
-    }
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const crushSearch = document.getElementById('crush_search');
-    const crushId = document.getElementById('crush_id');
-    const searchResults = document.getElementById('search-results');
-    const messageField = document.getElementById('menfess_message');
-    const charCount = document.getElementById('char-count');
-    
-    // Menampilkan hitungan karakter
-    if (messageField) {
-        messageField.addEventListener('input', function() {
-            const count = this.value.length;
-            charCount.textContent = count;
-            
-            // Membatasi jumlah karakter
-            if (count > 280) {
-                this.value = this.value.substring(0, 280);
-                charCount.textContent = 280;
-            }
-            
-            // Mengubah warna counter saat mendekati limit
-            if (count > 230) {
-                charCount.style.color = '#e63e5c';
-            } else {
-                charCount.style.color = '#999';
-            }
-        });
-    }
-    
-    // Menangani pencarian crush
-    if (crushSearch) {
-        let searchTimeout;
-        crushSearch.addEventListener('input', function() {
-            const query = this.value.trim();
-            
-            // Clear previous timeout
-            clearTimeout(searchTimeout);
-            
-            // Jika input kosong, sembunyikan hasil
-            if (query === '') {
-                searchResults.style.display = 'none';
-                crushId.value = '';
-                return;
-            }
-            
-            // Set timeout untuk pencarian (throttling)
-            searchTimeout = setTimeout(() => {
-                // Lakukan pencarian
-                fetchUsers(query);
-            }, 300);
-        });
-    }
-    
-    // Menutup hasil pencarian saat klik di luar
-    document.addEventListener('click', function(e) {
-        if (searchResults && !searchResults.contains(e.target) && e.target !== crushSearch) {
-            searchResults.style.display = 'none';
-        }
-    });
-    
-    // Fungsi untuk mengambil data pengguna
-    function fetchUsers(query) {
-        // AJAX call ke server untuk mencari user
-        fetch(`search_users.php?q=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                displayResults(data);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Fallback dengan data dummy jika API belum tersedia
-                const users = <?php echo json_encode($users); ?>;
-                const filtered = users.filter(user => 
-                    user.name.toLowerCase().includes(query.toLowerCase())
-                );
-                displayResults(filtered);
-            });
-    }
-    
-    // Fungsi untuk menampilkan hasil pencarian
-    function displayResults(users) {
-        // Bersihkan hasil sebelumnya
-        if (!searchResults) return;
-        searchResults.innerHTML = '';
-        
-        if (users.length === 0) {
-            searchResults.innerHTML = '<div class="search-result-item">Tidak ada hasil ditemukan</div>';
-            searchResults.style.display = 'block';
-            return;
-        }
-        
-        // Tambahkan setiap hasil
-        users.forEach(user => {
-            const item = document.createElement('div');
-            item.className = 'search-result-item';
-            const profilePic = user.profile_pic || '../assets/images/user_profile.png';
-            item.innerHTML = `
-                <div class="search-result-image">
-                    <img src="${profilePic}" alt="${user.name}">
-                </div>
-                <div class="search-result-info">
-                    <div class="search-result-name">${user.name}</div>
-                    <div class="search-result-detail">${user.major || ''}</div>
-                </div>
-            `;
-            
-            // Saat item diklik
-            item.addEventListener('click', function() {
-                crushSearch.value = user.name;
-                crushId.value = user.id;
-                searchResults.style.display = 'none';
-            });
-            
-            searchResults.appendChild(item);
-        });
-        
-        // Tampilkan hasil
-        searchResults.style.display = 'block';
-    }
-    
-    // Tab switching untuk menfess
-    const tabs = document.querySelectorAll('.menfess-tab');
-    if (tabs.length > 0) {
-        tabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                // Update active tab
-                tabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Show corresponding content
-                const target = this.getAttribute('data-tab');
-                document.querySelectorAll('.menfess-content').forEach(content => {
-                    content.classList.remove('active');
-                });
-                document.getElementById(target).classList.add('active');
-            });
-        });
-    }
-    
-    // Form validation
-    const menfessForm = document.getElementById('menfessForm');
-    if (menfessForm) {
-        menfessForm.addEventListener('submit', function(e) {
-            if (!crushId.value) {
-                e.preventDefault();
-                alert('Silakan pilih crush terlebih dahulu');
-                return false;
-            }
-            
-            if (!messageField.value.trim()) {
-                e.preventDefault();
-                alert('Pesan tidak boleh kosong');
-                return false;
-            }
-        });
-    }
-});
-</script>
-<?php endif; ?>
-                    
-                    <?php if ($page === 'chat'): ?>
+                    <?php elseif ($page === 'chat'): ?>
                         <div class="dashboard-header">
                             <h2>Chat</h2>
                             <p>Chat dengan mahasiswa lain atau mulai blind chat.</p>
@@ -2712,7 +2301,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             if (isset($session['last_message_time']) && !empty($session['last_message_time'])) {
                                                 echo date('d M', strtotime($session['last_message_time'])); 
                                             } else {
-                                                echo 'Baru';
+                                                echo'Baru';
                                             }
                                             ?>
                                             </div>
@@ -2996,376 +2585,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     </style>
-<?php endif; ?>
-                            
-                            <?php if ($page === 'payments'): ?>
-    <div class="dashboard-header">
-        <h2>Riwayat Pembayaran</h2>
-        <p>Lihat riwayat pembayaran dan transaksi profile reveal Anda.</p>
-    </div>
-    
-    <div class="card">
-        <?php
-        // Get user's payment history
-        $payments_sql = "SELECT prp.*, u.name as target_user_name, 
-                        p.profile_pic as target_profile_pic
-                        FROM profile_reveal_payments prp
-                        JOIN users u ON prp.target_user_id = u.id
-                        LEFT JOIN profiles p ON u.id = p.user_id
-                        WHERE prp.user_id = ?
-                        ORDER BY prp.created_at DESC";
-        $payments_stmt = $conn->prepare($payments_sql);
-        $payments_stmt->bind_param("i", $user_id);
-        $payments_stmt->execute();
-        $payments_result = $payments_stmt->get_result();
-        $payments = [];
-        while ($row = $payments_result->fetch_assoc()) {
-            $payments[] = $row;
-        }
-        ?>
-        
-        <div class="payments-container">
-            <div class="payments-header">
-                <h2><i class="fas fa-credit-card"></i> Pembayaran Saya</h2>
-                <p>Riwayat pembayaran untuk melihat profil pengguna</p>
-            </div>
-            
-            <?php if (empty($payments)): ?>
-                <div class="empty-payments">
-                    <div class="empty-icon">
-                        <i class="fas fa-receipt"></i>
-                    </div>
-                    <h3>Belum Ada Pembayaran</h3>
-                    <p>Anda belum melakukan pembayaran apapun untuk melihat profil pengguna lain.</p>
-                    <p class="empty-tip">Tip: Coba mulai <a href="?page=chat">Blind Chat</a> untuk menemukan pasangan baru!</p>
-                </div>
-            <?php else: ?>
-                <div class="payments-list">
-                    <?php foreach ($payments as $payment): ?>
-                        <div class="payment-card">
-                            <div class="payment-user">
-                                <div class="payment-avatar">
-                                    <img src="<?php echo !empty($payment['target_profile_pic']) ? htmlspecialchars($payment['target_profile_pic']) : 'assets/images/user_profile.png'; ?>" 
-                                         alt="<?php echo htmlspecialchars($payment['target_user_name']); ?>">
-                                </div>
-                                <div class="payment-user-info">
-                                    <h3><?php echo htmlspecialchars($payment['target_user_name']); ?></h3>
-                                    <div class="payment-date">
-                                        <i class="fas fa-calendar-alt"></i> <?php echo date('d M Y', strtotime($payment['created_at'])); ?>
-                                    </div>
-                                </div>
-                                <div class="payment-status-badge <?php echo $payment['status']; ?>">
-                                    <?php
-                                    switch ($payment['status']) {
-                                        case 'completed':
-                                            echo '<i class="fas fa-check-circle"></i> Selesai';
-                                            break;
-                                        case 'pending':
-                                            echo '<i class="fas fa-clock"></i> Menunggu';
-                                            break;
-                                        case 'failed':
-                                            echo '<i class="fas fa-times-circle"></i> Gagal';
-                                            break;
-                                        case 'refunded':
-                                            echo '<i class="fas fa-undo"></i> Dikembalikan';
-                                            break;
-                                    }
-                                    ?>
-                                </div>
-                            </div>
-                            <div class="payment-details">
-                                <div class="payment-info">
-                                    <div class="payment-info-item">
-                                        <span class="label">Order ID:</span>
-                                        <span class="value"><?php echo htmlspecialchars($payment['order_id']); ?></span>
-                                    </div>
-                                    <div class="payment-info-item">
-                                        <span class="label">Jumlah:</span>
-                                        <span class="value price">Rp <?php echo number_format($payment['amount'], 0, ',', '.'); ?></span>
-                                    </div>
-                                    <div class="payment-info-item">
-                                        <span class="label">Waktu:</span>
-                                        <span class="value"><?php echo date('H:i', strtotime($payment['created_at'])); ?> WIB</span>
-                                    </div>
-                                    <?php if ($payment['status'] === 'completed' && !empty($payment['paid_at'])): ?>
-                                    <div class="payment-info-item">
-                                        <span class="label">Dibayar pada:</span>
-                                        <span class="value"><?php echo date('d M Y H:i', strtotime($payment['paid_at'])); ?> WIB</span>
-                                    </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="payment-actions">
-                                    <?php if ($payment['status'] === 'completed'): ?>
-                                        <a href="view_profile.php?id=<?php echo $payment['target_user_id']; ?>" class="btn">
-                                            <i class="fas fa-eye"></i> Lihat Profil
-                                        </a>
-                                    <?php elseif ($payment['status'] === 'pending'): ?>
-                                        <a href="payment_process.php?order_id=<?php echo $payment['order_id']; ?>" class="btn">
-                                            <i class="fas fa-credit-card"></i> Bayar Sekarang
-                                        </a>
-                                        <a href="#" class="btn btn-outline cancel-payment" data-order-id="<?php echo $payment['order_id']; ?>">
-                                            <i class="fas fa-times"></i> Batalkan
-                                        </a>
-                                    <?php elseif ($payment['status'] === 'failed'): ?>
-                                        <a href="payment_process.php?order_id=<?php echo $payment['order_id']; ?>" class="btn">
-                                            <i class="fas fa-redo"></i> Coba Lagi
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
-    
-    <style>
-    /* Payment Section Styling */
-    .payments-container {
-        margin-bottom: 30px;
-    }
-    
-    .payments-header {
-        margin-bottom: 25px;
-        text-align: center;
-    }
-    
-    .payments-header h2 {
-        font-size: 24px;
-        margin-bottom: 10px;
-        color: var(--primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-    }
-    
-    .payments-header p {
-        color: #666;
-        font-size: 16px;
-    }
-    
-    .payments-list {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .payment-card {
-        background-color: var(--card-bg);
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: var(--card-shadow);
-        border: 1px solid var(--border-color);
-        transition: transform 0.3s, box-shadow 0.3s;
-    }
-    
-    .payment-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-    }
-    
-    .payment-user {
-        display: flex;
-        align-items: center;
-        padding: 15px 20px;
-        border-bottom: 1px solid var(--border-color);
-        position: relative;
-    }
-    
-    .payment-avatar {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        overflow: hidden;
-        margin-right: 15px;
-    }
-    
-    .payment-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .payment-user-info {
-        flex: 1;
-    }
-    
-    .payment-user-info h3 {
-        font-size: 18px;
-        margin-bottom: 5px;
-        color: var(--text-color);
-    }
-    
-    .payment-date {
-        font-size: 13px;
-        color: #888;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    
-    .payment-status-badge {
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    
-    .payment-status-badge.completed {
-        background-color: #d4edda;
-        color: #155724;
-    }
-    
-    .payment-status-badge.pending {
-        background-color: #fff3cd;
-        color: #856404;
-    }
-    
-    .payment-status-badge.failed {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-    
-    .payment-status-badge.refunded {
-        background-color: #d1ecf1;
-        color: #0c5460;
-    }
-    
-    .payment-details {
-        padding: 15px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-    
-    .payment-info {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 10px 20px;
-        flex: 1;
-    }
-    
-    .payment-info-item {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .payment-info-item .label {
-        font-size: 12px;
-        color: #888;
-        margin-bottom: 5px;
-    }
-    
-    .payment-info-item .value {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--text-color);
-    }
-    
-    .payment-info-item .price {
-        color: var(--primary);
-        font-weight: 600;
-    }
-    
-    .payment-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-    
-    .empty-payments {
-        text-align: center;
-        padding: 40px 20px;
-        background-color: rgba(0,0,0,0.02);
-        border-radius: 10px;
-    }
-    
-    .empty-icon {
-        font-size: 50px;
-        color: var(--secondary);
-        margin-bottom: 20px;
-        animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.05); opacity: 0.8; }
-        100% { transform: scale(1); opacity: 1; }
-    }
-    
-    .empty-payments h3 {
-        font-size: 24px;
-        margin-bottom: 10px;
-        color: var(--text-color);
-    }
-    
-    .empty-payments p {
-        color: #666;
-        margin-bottom: 5px;
-        max-width: 400px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    
-    .empty-tip {
-        margin-top: 15px;
-        font-style: italic;
-        font-size: 14px;
-    }
-    
-    .empty-tip a {
-        color: var(--primary);
-        text-decoration: none;
-        font-weight: 500;
-    }
-    
-    .empty-tip a:hover {
-        text-decoration: underline;
-    }
-    
-    @media (max-width: 767px) {
-        .payment-details {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        
-        .payment-info {
-            grid-template-columns: 1fr;
-        }
-        
-        .payment-actions {
-            justify-content: center;
-        }
-    }
-    </style>
-    
-    <script>
-    // Handle payment cancellation
-    document.addEventListener('DOMContentLoaded', function() {
-        const cancelButtons = document.querySelectorAll('.cancel-payment');
-        
-        cancelButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                if (confirm('Apakah Anda yakin ingin membatalkan pembayaran ini?')) {
-                    const orderId = this.getAttribute('data-order-id');
-                    
-                    // Here you would normally send an AJAX request to cancel the payment
-                    // For now, we'll just redirect to a hypothetical cancel endpoint
-                    window.location.href = 'cancel_payment.php?order_id=' + orderId;
-                }
-            });
-        });
-    });
-    </script>
 <?php endif; ?>
 </section>
     <script>
