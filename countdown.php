@@ -82,6 +82,9 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
         
         .container {
@@ -89,9 +92,10 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 20px;
-            flex: 1;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         
         header {
@@ -108,6 +112,10 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
             justify-content: space-between;
             align-items: center;
             padding: 15px 0;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
         
         .logo {
@@ -124,64 +132,14 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
             font-size: 24px;
         }
         
-        nav ul {
-            display: flex;
-            list-style: none;
-        }
-        
-        nav ul li {
-            margin-left: 20px;
-        }
-        
-        nav ul li a {
-            text-decoration: none;
-            color: var(--dark);
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-        
-        nav ul li a:hover {
-            color: var(--primary);
-        }
-        
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: var(--primary);
-            color: var(--light);
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-        
-        .btn:hover {
-            background-color: #e63e5c;
-            transform: translateY(-2px);
-        }
-        
-        .btn-outline {
-            background-color: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-        }
-        
-        .btn-outline:hover {
-            background-color: var(--primary);
-            color: var(--light);
-        }
-        
         .countdown-container {
-            padding-top: 100px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            flex: 1;
-            padding-bottom: 50px;
+            padding: 50px 20px;
+            min-height: 100vh;
         }
         
         .countdown-title {
@@ -195,6 +153,7 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
             margin-bottom: 40px;
             color: var(--dark);
             max-width: 700px;
+            line-height: 1.6;
         }
         
         .current-time {
@@ -210,7 +169,8 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
         .countdown-timer {
             display: flex;
             gap: 20px;
-            margin-bottom: 40px;
+            margin: 40px 0;
+            justify-content: center;
         }
         
         .countdown-box {
@@ -246,58 +206,6 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
             color: var(--dark);
         }
         
-        .countdown-features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-            margin-top: 50px;
-            width: 100%;
-            max-width: 1000px;
-        }
-        
-        .feature-card {
-            background-color: var(--light);
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            text-align: center;
-            transition: transform 0.3s;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-10px);
-        }
-        
-        .feature-icon {
-            font-size: 40px;
-            color: var(--primary);
-            margin-bottom: 20px;
-        }
-        
-        .feature-title {
-            font-size: 20px;
-            margin-bottom: 10px;
-            color: var(--dark);
-        }
-        
-        .feature-description {
-            font-size: 14px;
-            color: #666;
-        }
-        
-        .admin-notice {
-            background-color: #fff3cd;
-            color: #856404;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 30px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        
         footer {
             background-color: var(--light);
             padding: 20px 0;
@@ -305,6 +213,9 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
             font-size: 14px;
             color: #666;
             border-top: 1px solid #eee;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
         }
         
         @media (max-width: 767px) {
@@ -322,46 +233,32 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
                 height: 80px;
                 font-size: 36px;
             }
+            
+            .countdown-subtitle {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
 <body>
     <!-- Header -->
     <header>
-        <div class="container">
-            <div class="header-content">
-                <a href="cupid.php" class="logo">
-                    <i class="fas fa-heart"></i> Cupid
-                </a>
-                <nav>
-                    <ul>
-                        <?php if ($is_admin): ?>
-                        <li><a href="admin_dashboard.php">Admin Panel</a></li>
-                        <?php endif; ?>
-                        <li>
-                            <a href="logout.php" class="btn btn-outline">Logout</a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="header-content">
+            <a href="#" class="logo">
+                <i class="fas fa-heart"></i> Cupid
+            </a>
         </div>
     </header>
 
     <!-- Countdown Section -->
     <section class="countdown-container">
         <div class="container">
-            <?php if ($admin_notice): ?>
-            <div class="admin-notice">
-                <p><strong>Admin Notice:</strong> As an admin, you can bypass the countdown and access all features.</p>
-                <a href="dashboard.php" class="btn">Go to Dashboard</a>
-            </div>
-            <?php endif; ?>
-            
             <h1 class="countdown-title">Cupid is Coming Soon!</h1>
+            
             <p class="countdown-subtitle">We're working hard to launch Cupid, your new matchmaking platform. Get ready to connect with amazing people based on your interests, hobbies, and personality.</p>
             
             <div class="current-time">
-                <i class="fas fa-clock"></i> Current time: <span id="current-time"><?php echo $currentTimeJakarta; ?></span>
+                <i class="fas fa-clock"></i> Current time: <span id="current-time">Loading...</span>
             </div>
             
             <div class="countdown-timer" id="countdown">
@@ -383,47 +280,27 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
                 </div>
             </div>
             
-            <p class="countdown-message">Official Launch: <strong><?php echo $releaseDateFormatted; ?></strong></p>
-            
-            <div class="countdown-features">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-mask"></i>
-                    </div>
-                    <h3 class="feature-title">Anonymous Crush Menfess</h3>
-                    <p class="feature-description">Send anonymous messages to your crush. If they like you back, both identities will be revealed!</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-comments"></i>
-                    </div>
-                    <h3 class="feature-title">Blind Chat</h3>
-                    <p class="feature-description">Chat with random students without seeing their profile first. Discover personalities before appearances.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-clipboard-check"></i>
-                    </div>
-                    <h3 class="feature-title">Compatibility Test</h3>
-                    <p class="feature-description">Take our personality quiz to find matches based on compatibility, major, and interests.</p>
-                </div>
-            </div>
+            <p class="countdown-message">Official Launch: <strong>Wednesday, April 16, 2025 at 3:00 PM WIB</strong></p>
         </div>
     </section>
 
     <footer>
         <div class="container">
-            <p>&copy; <?php echo date('Y'); ?> Cupid. All rights reserved.</p>
+            <p>&copy; 2025 Cupid. All rights reserved.</p>
         </div>
     </footer>
 
     <script>
-        // Set the release date for countdown (April 16, 2025, 3:00 PM Jakarta time)
-        const releaseDate = new Date('April 16, 2025 15:00:00 GMT+0700').getTime();
+        // Set the release date for countdown (April 16, 2025, 3:00 PM Jakarta time - GMT+7)
+        const releaseDate = new Date('2025-04-16T15:00:00+0700').getTime();
         
         // Function to format date with WIB timezone indicator
-        function formatJakartaTime(date) {
+        function updateCurrentTime() {
+            const now = new Date();
+            
+            // Buat waktu Jakarta secara spesifik
             const options = { 
+                timeZone: 'Asia/Jakarta',
                 weekday: 'long', 
                 year: 'numeric', 
                 month: 'long', 
@@ -433,19 +310,14 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
                 second: 'numeric',
                 hour12: true
             };
-            return new Intl.DateTimeFormat('en-US', options).format(date) + ' WIB';
-        }
-        
-        // Update the current time display
-        function updateCurrentTime() {
-            const now = new Date();
-            // Adjust to Jakarta time by adding the offset
-            // Jakarta is GMT+7, so adjust by the difference between local and GMT+7
-            const jakartaTime = new Date(now.getTime() + (7*60*60*1000 - now.getTimezoneOffset()*60*1000));
-            document.getElementById('current-time').textContent = formatJakartaTime(jakartaTime);
+            
+            const jakartaTimeString = now.toLocaleString('en-US', options);
+            document.getElementById('current-time').textContent = jakartaTimeString + ' WIB';
+            
+            // Convert to Jakarta time for calculations
+            const jakartaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
             return jakartaTime;
         }
-        
         // Update the countdown every 1 second
         const countdown = setInterval(function() {
             // Get current date and time (adjusted to Jakarta time)
@@ -467,7 +339,7 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
             document.getElementById('minutes').innerHTML = String(minutes).padStart(2, '0');
             document.getElementById('seconds').innerHTML = String(seconds).padStart(2, '0');
             
-            // If the countdown is over, redirect to dashboard
+            // If the countdown is over
             if (distance < 0) {
                 clearInterval(countdown);
                 document.getElementById('days').innerHTML = '00';
@@ -475,10 +347,7 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
                 document.getElementById('minutes').innerHTML = '00';
                 document.getElementById('seconds').innerHTML = '00';
                 
-                // Redirect to dashboard after a short delay
-                setTimeout(function() {
-                    window.location.href = 'dashboard.php';
-                }, 3000);
+                document.querySelector('.countdown-message').innerHTML = '<strong>We are live now!</strong>';
             }
         }, 1000);
         
