@@ -431,10 +431,10 @@ if ($test_taken) {
     $matches_sql = "SELECT u.id, u.name, p.profile_pic, p.bio, p.major, p.interests,
                ABS(IFNULL(cr.personality_score, 0) - ?) as personality_diff,
                CASE WHEN cr.major = ? THEN 30 ELSE 0 END as major_match,
-               CASE WHEN LOWER(IFNULL(cr.interests, '')) LIKE CONCAT('%', LOWER(IFNULL(?, '')), '%') THEN 40 ELSE 0 END as interests_match,
+               CASE WHEN LOWER(IFNULL(cr.interests, '')) COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', LOWER(IFNULL(?, '')), '%') THEN 40 ELSE 0 END as interests_match,
                (100 - ABS(IFNULL(cr.personality_score, 0) - ?) * 0.3 + 
                CASE WHEN cr.major = ? THEN 30 ELSE 0 END + 
-               CASE WHEN LOWER(IFNULL(cr.interests, '')) LIKE CONCAT('%', LOWER(IFNULL(?, '')), '%') THEN 40 ELSE 0 END) as compatibility_score
+               CASE WHEN LOWER(IFNULL(cr.interests, '')) COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', LOWER(IFNULL(?, '')), '%') THEN 40 ELSE 0 END) as compatibility_score
                FROM compatibility_results cr
                JOIN users u ON cr.user_id = u.id
                LEFT JOIN profiles p ON u.id = p.user_id
