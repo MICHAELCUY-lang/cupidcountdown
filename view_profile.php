@@ -32,28 +32,7 @@ if ($profile_id <= 0) {
     exit();
 }
 
-// Check if this is blind chat profile viewing
-$chat_sql = "SELECT cs.* FROM chat_sessions cs
-            WHERE cs.is_blind = 1
-            AND ((cs.user1_id = ? AND cs.user2_id = ?) OR (cs.user1_id = ? AND cs.user2_id = ?))";
-$chat_stmt = $conn->prepare($chat_sql);
-$chat_stmt->bind_param("iiii", $user_id, $profile_id, $profile_id, $user_id);
-$chat_stmt->execute();
-$chat_result = $chat_stmt->get_result();
-$is_blind_chat = ($chat_result->num_rows > 0);
-
-// For blind chats, we'll now simply show the profile without payment checks
-// Just record that this profile has been viewed
-if ($is_blind_chat) {
-    // Add entry to profile_view_permissions if it doesn't exist yet
-    $permission_sql = "INSERT IGNORE INTO profile_view_permissions (user_id, target_user_id, created_at) 
-                      VALUES (?, ?, NOW())";
-    $permission_stmt = $conn->prepare($permission_sql);
-    $permission_stmt->bind_param("ii", $user_id, $profile_id);
-    $permission_stmt->execute();
-}
-
-// Get user and profile data
+// Get user and profile data - No payment or blind chat checks needed
 $sql = "SELECT u.*, p.* 
         FROM users u 
         LEFT JOIN profiles p ON u.id = p.user_id 
@@ -383,7 +362,7 @@ function redirect($url) {
         <div class="container">
             <div class="profile-header">
                 <div class="profile-image">
-                    <img src="<?php echo !empty($profile_data['profile_pic']) ? htmlspecialchars($profile_data['profile_pic']) : '/api/placeholder/200/200'; ?>" alt="<?php echo htmlspecialchars($profile_data['name']); ?>">
+                    <img src="<?php echo !empty($profile_data['profile_pic']) ? htmlspecialchars($profile_data['profile_pic']) : 'assets/images/user_profile.png'; ?>" alt="<?php echo htmlspecialchars($profile_data['name']); ?>">
                 </div>
                 <div class="profile-info">
                     <h1><?php echo htmlspecialchars($profile_data['name']); ?></h1>

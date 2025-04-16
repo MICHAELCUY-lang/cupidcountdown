@@ -39,14 +39,13 @@ $stmt->execute();
 $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 
-// Get chat session data with approval status
+// Get chat session data (removed anonymous-related fields)
 $session_sql = "SELECT cs.*, 
                 u1.name as user1_name, 
                 u2.name as user2_name,
                 CASE WHEN cs.user1_id = ? THEN u2.name ELSE u1.name END as partner_name,
                 CASE WHEN cs.user1_id = ? THEN u2.id ELSE u1.id END as partner_id,
-                p.profile_pic,
-                cs.user1_approved, cs.user2_approved, cs.is_approved
+                p.profile_pic
                 FROM chat_sessions cs
                 JOIN users u1 ON cs.user1_id = u1.id
                 JOIN users u2 ON cs.user2_id = u2.id
@@ -64,18 +63,8 @@ if ($session_result->num_rows === 0) {
 
 $chat_session = $session_result->fetch_assoc();
 $partner_id = $chat_session['partner_id'];
-$is_blind = $chat_session['is_blind'];
 
-// Check profile view permission for blind chat
-$has_permission = false;
-if ($is_blind) {
-    $permission_sql = "SELECT * FROM profile_view_permissions WHERE user_id = ? AND target_user_id = ?";
-    $permission_stmt = $conn->prepare($permission_sql);
-    $permission_stmt->bind_param("ii", $user_id, $partner_id);
-    $permission_stmt->execute();
-    $permission_result = $permission_stmt->get_result();
-    $has_permission = ($permission_result->num_rows > 0);
-}
+// Always give direct access to view profile - no payment check needed
 
 // Handle new message submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_message'])) {
@@ -321,23 +310,6 @@ function isMessageDeleted($conn, $message_id) {
             gap: 10px;
         }
         
-        .chat-status {
-            font-size: 12px;
-            padding: 3px 8px;
-            border-radius: 10px;
-            margin-left: 8px;
-        }
-        
-        .status-anonymous {
-            background-color: var(--secondary);
-            color: var(--primary);
-        }
-        
-        .status-approved {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
         .chat-main {
             flex: 1;
             display: flex;
@@ -453,22 +425,6 @@ function isMessageDeleted($conn, $message_id) {
         
         .chat-form button i {
             margin-left: 5px;
-        }
-        
-        .blind-chat-notice {
-            background-color: var(--secondary);
-            color: var(--primary);
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .blind-chat-notice i {
-            margin-right: 10px;
-            font-size: 18px;
         }
         
         .inline-form {
@@ -602,11 +558,6 @@ function isMessageDeleted($conn, $message_id) {
             color: var(--secondary);
         }
         
-        .lock-icon {
-            margin-left: 5px;
-            color: var(--primary);
-        }
-        
         @media (max-width: 767px) {
             .message-content {
                 max-width: 85%;
@@ -655,46 +606,20 @@ function isMessageDeleted($conn, $message_id) {
             <!-- Chat Header -->
             <div class="chat-header">
                 <div class="chat-avatar">
-                    <?php if (!$is_blind || $has_permission): ?>
                     <a href="<?php echo 'view_profile.php?id=' . $partner_id; ?>" title="Lihat profil">
                         <img src="<?php echo !empty($chat_session['profile_pic']) ? htmlspecialchars($chat_session['profile_pic']) : 'assets/images/user_profile.png'; ?>" alt="<?php echo htmlspecialchars($chat_session['partner_name']); ?>">
                     </a>
-                    <?php else: ?>
-                    <img src="assets/images/user_profile.png" alt="Anonymous User">
-                    <?php endif; ?>
                 </div>
                 <div class="chat-profile">
                     <h2>
-                        <?php if ($is_blind && !$has_permission): ?>
-                            Anonymous User
-                            <span class="chat-status status-anonymous">Anonymous</span>
-                            <i class="fas fa-lock lock-icon" title="Profil Terkunci"></i>
-                        <?php else: ?>
-                            <?php echo htmlspecialchars($chat_session['partner_name']); ?>
-                            <?php if ($is_blind && $has_permission): ?>
-                                <i class="fas fa-unlock lock-icon" title="Profil Terbuka"></i>
-                            <?php endif; ?>
-                        <?php endif; ?>
+                        <?php echo htmlspecialchars($chat_session['partner_name']); ?>
                     </h2>
-                    <?php if ($is_blind): ?>
-                        <p>
-                            <i class="fas fa-mask"></i> 
-                            Anonymous Chat
-                        </p>
-                    <?php endif; ?>
                 </div>
                 <div class="chat-actions">
-                    <?php if ($is_blind && !$has_permission): ?>
-                        <!-- Tombol lihat profil berbayar -->
-                        <a href="create_profile_payment.php?chat_id=<?php echo $session_id; ?>&partner_id=<?php echo $partner_id; ?>" class="btn btn-sm" title="Lihat Profil">
-                            <i class="fas fa-eye"></i> Lihat Profil (Rp15.000)
-                        </a>
-                    <?php elseif (!$is_blind || $has_permission): ?>
-                        <!-- Chat biasa bisa langsung lihat profil -->
-                        <a href="view_profile.php?id=<?php echo $partner_id; ?>" title="Lihat Profil" class="btn btn-sm">
-                            <i class="fas fa-user"></i> Profil
-                        </a>
-                    <?php endif; ?>
+                    <!-- View profile button - Direct link to profile -->
+                    <a href="view_profile.php?id=<?php echo $partner_id; ?>" class="btn btn-sm" title="Lihat Profil">
+                        <i class="fas fa-user"></i> Profil
+                    </a>
                     
                     <!-- Delete Chat button -->
                     <div class="dropdown">
@@ -718,18 +643,6 @@ function isMessageDeleted($conn, $message_id) {
                 <i class="fas fa-exclamation-circle"></i>
                 <?php echo $error_message; ?>
             </div>
-            <?php endif; ?>
-            
-            <?php if ($is_blind && !$has_permission): ?>
-                <div class="blind-chat-notice">
-                    <i class="fas fa-info-circle"></i> 
-                    Ini adalah anonymous chat. Identitas tidak terungkap sampai Anda membayar untuk melihat profil.
-                </div>
-            <?php elseif ($is_blind && $has_permission): ?>
-                <div class="blind-chat-notice" style="background-color: #d4edda; color: #155724;">
-                    <i class="fas fa-check-circle"></i> 
-                    Anda telah membuka profil lawan bicara ini.
-                </div>
             <?php endif; ?>
             
             <!-- Chat Main Area -->
