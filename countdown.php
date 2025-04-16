@@ -1,5 +1,5 @@
 <?php
-// countdown.php
+// countdown
 // Shows a countdown timer until release date
 
 require_once 'config.php';
@@ -7,8 +7,8 @@ require_once 'config.php';
 // Set timezone to Jakarta (WIB/GMT+7)
 date_default_timezone_set('Asia/Jakarta');
 
-// Set the release date and time (April 16, 2025, 3:00 PM Jakarta time)
-$releaseDate = new DateTime('2025-04-16 15:00:00', new DateTimeZone('Asia/Jakarta'));
+// Set the release date and time (April 18, 2025, 3:00 PM Jakarta time)
+$releaseDate = new DateTime('2025-04-18 15:00:00', new DateTimeZone('Asia/Jakarta'));
 $now = new DateTime('now', new DateTimeZone('Asia/Jakarta'));
 
 // Check if countdown is over
@@ -253,9 +253,9 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
     <!-- Countdown Section -->
     <section class="countdown-container">
         <div class="container">
-            <h1 class="countdown-title">Cupid is Coming Soon!</h1>
+            <h1 class="countdown-title">Cupid is Maintenance!</h1>
             
-            <p class="countdown-subtitle">We're working hard to launch Cupid, your new matchmaking platform. Get ready to connect with amazing people based on your interests, hobbies, and personality.</p>
+            <p class="countdown-subtitle">Sorry cupid for disturbing your experience on cupid. we are fixing bugs and developing features that you want. thank you for your understanding.</p>
             
             <div class="current-time">
                 <i class="fas fa-clock"></i> Current time: <span id="current-time">Loading...</span>
@@ -280,7 +280,7 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
                 </div>
             </div>
             
-            <p class="countdown-message">Official Launch: <strong>Wednesday, April 16, 2025 at 3:00 PM WIB</strong></p>
+            <p class="countdown-message">Maintenance: <strong>Thursday,18 April , 2025 at 3:00 PM WIB</strong></p>
         </div>
     </section>
 
@@ -291,8 +291,8 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
     </footer>
 
     <script>
-        // Set the release date for countdown (April 16, 2025, 3:00 PM Jakarta time - GMT+7)
-        const releaseDate = new Date('2025-04-16T15:00:00+0700').getTime();
+        // Set the release date for countdown (April 18, 2025, 3:00 PM Jakarta time - GMT+7)
+        const releaseDate = new Date('2025-04-18T15:00:00+0700').getTime();
         
         // Function to format date with WIB timezone indicator
         function updateCurrentTime() {
@@ -355,4 +355,4 @@ $currentTimeJakarta = $now->format('l, F j, Y \a\t g:i:s A') . ' WIB';
         updateCurrentTime();
     </script>
 </body>
-</html> 
+</html>

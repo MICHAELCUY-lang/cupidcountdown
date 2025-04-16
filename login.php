@@ -1,6 +1,6 @@
 <?php
 // Sertakan file konfigurasi
-require_once 'config,php';
+require_once 'config.php';
 
 // Set timezone to Jakarta (WIB/GMT+7)
 date_default_timezone_set('Asia/Jakarta');

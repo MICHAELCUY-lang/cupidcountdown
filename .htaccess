@@ -2,14 +2,20 @@
     # Enable rewrite engine
     RewriteEngine On
     
-    # Set base directory (jika diperlukan)
+    # Set base directory (if needed)
     # RewriteBase /
     
-    # Jangan proses jika file atau direktori yang ada
+    # Redirect URLs with .php extension to URLs without extension
+    # Don't redirect actual PHP files that should be executed directly
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteCond %{THE_REQUEST} \s/+(.+?)\.php[\s?] [NC]
+    RewriteRule ^ /%1 [R=301,L,NE]
+    
+    # Don't process if file or directory exists
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
 
-    # Rewrite untuk semua halaman utama (tanpa .php)
+    # Handle specific page redirects (from your existing config)
     RewriteRule ^dashboard$ dashboard.php [L]
     RewriteRule ^login$ login.php [L]
     RewriteRule ^register$ register.php [L]
@@ -19,7 +25,7 @@
     RewriteRule ^cupid$ cupid.php [L]
     RewriteRule ^resend_verification$ resend_verification.php [L]
     
-    # Rewrite untuk halaman fitur
+    # Feature pages
     RewriteRule ^chat$ chat.php [L]
     RewriteRule ^profile$ profile.php [L]
     RewriteRule ^menfess$ menfess.php [L]
@@ -27,26 +33,27 @@
     RewriteRule ^view_profile$ view_profile.php [L]
     RewriteRule ^start_chat$ start_chat.php [L]
     
-    # Rewrite untuk halaman pembayaran
+    # Payment pages
     RewriteRule ^payment_callback$ payment_callback.php [L]
     RewriteRule ^payment_process$ payment_process.php [L]
     RewriteRule ^create_profile_payment$ create_profile_payment.php [L]
     RewriteRule ^midtrans_notification$ midtrans_notification.php [L]
     
-    # Rewrite untuk halaman admin
+    # Admin pages
     RewriteRule ^admin_dashboard$ admin_dashboard.php [L]
     RewriteRule ^admin_users$ admin_users.php [L]
     RewriteRule ^admin_payments$ admin_payments.php [L]
     RewriteRule ^view_payment$ view_payment.php [L]
     
-    # Rewrite untuk halaman dengan parameter (seperti view_profile?id=123)
-    # Pastikan baris ini ada setelah semua rewrite spesifik di atas
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
+    # Generic rule for all other PHP files - PLACE THIS AFTER SPECIFIC RULES
+    RewriteRule ^([^/]+)$ $1.php [L]
+    
+    # Handle parameters (like view_profile?id=123)
+    RewriteCond %{QUERY_STRING} .+
     RewriteRule ^([^/]+)$ $1.php [L]
 </IfModule>
 
-# Pastikan file index disembunyikan
+# Set index files
 DirectoryIndex index.php index.html cupid.php
 
 # Protect .htaccess file

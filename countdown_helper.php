@@ -11,7 +11,7 @@ function isCountdownOver() {
     // Set timezone to Jakarta (WIB/GMT+7)
     date_default_timezone_set('Asia/Jakarta');
     
-    $releaseDate = new DateTime('2025-04-16 15:00:00', new DateTimeZone('Asia/Jakarta'));
+    $releaseDate = new DateTime('2025-04-18 15:00:00', new DateTimeZone('Asia/Jakarta'));
     $now = new DateTime('now', new DateTimeZone('Asia/Jakarta'));
     return ($now >= $releaseDate);
 }
@@ -52,7 +52,7 @@ function redirectBasedOnCountdown($user_id, $conn) {
         return;
     } else {
         // Redirect to countdown
-        header('Location: countdown.php');
+        header('Location: countdown');
         exit();
     }
 }
