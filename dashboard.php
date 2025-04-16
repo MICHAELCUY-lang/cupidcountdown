@@ -259,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_blind_chat'])) 
         if ($chat_stmt->execute()) {
             $chat_id = $conn->insert_id;
             $blind_chat_message = 'Blind chat started! Redirecting...';
-            header("Location: chat.php?session_id=" . $chat_id);
+            header("Location: chat?session_id=" . $chat_id);
             exit();
         } else {
             $blind_chat_message = 'Error starting blind chat: ' . $conn->error;
@@ -394,7 +394,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_test'])) {
             $test_results = $test_taken_result->fetch_assoc();
             
             // Redirect to dashboard
-            header("Location: dashboard.php?page=compatibility");
+            header("Location: dashboard?page=compatibility");
             exit();
         } else {
             $test_message = 'Error updating test results: ' . $conn->error;
@@ -417,7 +417,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_test'])) {
             $test_results = $test_taken_result->fetch_assoc();
             
             // Redirect to dashboard
-            header("Location: dashboard.php?page=compatibility");
+            header("Location: dashboard?page=compatibility");
             exit();
         } else {
             $test_message = 'Error saving test results: ' . $conn->error;
@@ -1631,7 +1631,7 @@ input:checked + .toggle-slider:before {
     <header>
         <div class="container">
             <div class="header-content">
-                <a href="cupid.php" class="logo">
+                <a href="cupid" class="logo">
                     <i class="fas fa-heart"></i> Cupid
                 </a>
                 <nav>
@@ -1642,9 +1642,9 @@ input:checked + .toggle-slider:before {
         <i class="fas fa-sun"></i>
     </button>
 </div>
-                        <li><a href="dashboard.php">Dashboard</a></li>
+                        <li><a href="dashboard">Dashboard</a></li>
                         <li>
-                            <a href="logout.php" class="btn btn-outline">Keluar</a>
+                            <a href="logout" class="btn btn-outline">Keluar</a>
                         </li>
                     </ul>
                 </nav>
@@ -2001,8 +2001,88 @@ input:checked + .toggle-slider:before {
                                 </div>
                             </form>
                         </div>
+                          <script>
+        // Handle tab switching
+        document.querySelectorAll('.profile-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Update active tab
+                document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show corresponding content
+                const tabName = this.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(tabName + '-tab').classList.add('active');
+            });
+        });
+        
+        // Handle file upload preview
+        document.getElementById('profile_pic').addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const fileName = this.files[0].name;
+                document.getElementById('file-name').value = fileName;
+                
+                // Optional: Preview the image
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const profilePic = document.querySelector('.profile-pic img');
+                    profilePic.src = e.target.result;
+                }
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+        
+        // Handle dynamic interests display
+        const interestsInput = document.getElementById('interests');
+        const interestsDisplay = document.getElementById('interests-display');
+        
+        interestsInput.addEventListener('input', function() {
+            const interests = this.value.split(',').filter(interest => interest.trim() !== '');
+            
+            if (interests.length > 0) {
+                interestsDisplay.innerHTML = '';
+                
+                interests.forEach(interest => {
+                    const tag = document.createElement('span');
+                    tag.className = 'interest-tag';
+                    tag.innerHTML = interest.trim() + ' <i class="fas fa-times"></i>';
+                    interestsDisplay.appendChild(tag);
+                    
+                    // Add event listener to remove tag when clicked
+                    tag.querySelector('i').addEventListener('click', function() {
+                        const removedInterest = this.parentNode.textContent.trim().slice(0, -1).trim();
+                        const currentInterests = interestsInput.value.split(',').map(i => i.trim());
+                        const filteredInterests = currentInterests.filter(i => i !== removedInterest);
+                        interestsInput.value = filteredInterests.join(', ');
+                        this.parentNode.remove();
                         
-                    <!-- Menfess Section for Dashboard.php -->
+                        if (interestsDisplay.children.length === 0) {
+                            interestsDisplay.innerHTML = '<span class="text-muted">Belum ada minat yang ditambahkan</span>';
+                        }
+                    });
+                });
+            } else {
+                interestsDisplay.innerHTML = '<span class="text-muted">Belum ada minat yang ditambahkan</span>';
+            }
+        });
+        
+        // Add click event to existing interest tags
+        document.querySelectorAll('.interest-tag i').forEach(icon => {
+            icon.addEventListener('click', function() {
+                const removedInterest = this.parentNode.textContent.trim().slice(0, -1).trim();
+                const currentInterests = interestsInput.value.split(',').map(i => i.trim());
+                const filteredInterests = currentInterests.filter(i => i !== removedInterest);
+                interestsInput.value = filteredInterests.join(', ');
+                this.parentNode.remove();
+                
+                if (interestsDisplay.children.length === 0) {
+                    interestsDisplay.innerHTML = '<span class="text-muted">Belum ada minat yang ditambahkan</span>';
+                }
+            });
+        });
+    </script>
+                        
+                    <!-- Menfess Section for Dashboard -->
 <?php elseif ($page === 'menfess'): ?>
     <div class="dashboard-header">
         <h2>Crush Menfess</h2>
@@ -2020,7 +2100,7 @@ input:checked + .toggle-slider:before {
             <h3><i class="fas fa-paper-plane"></i> Kirim Menfess</h3>
         </div>
         <div class="menfess-form-container">
-            <form id="menfessForm" method="post" action="dashboard.php?page=menfess">
+            <form id="menfessForm" method="post" action="dashboard?page=menfess">
                 <div class="form-group">
                     <label for="crush_search">Cari Crush</label>
                     <div class="search-wrapper">
@@ -2244,10 +2324,10 @@ input:checked + .toggle-slider:before {
                                     <?php echo isset($match['bio']) && !empty($match['bio']) ? nl2br(htmlspecialchars(substr($match['bio'], 0, 100) . (strlen($match['bio']) > 100 ? '...' : ''))) : 'Belum ada bio.'; ?>
                                 </div>
                                 <div class="match-actions">
-                                    <a href="view_profile.php?id=<?php echo $match['id']; ?>" class="btn btn-outline">
+                                    <a href="view_profile?id=<?php echo $match['id']; ?>" class="btn btn-outline">
                                         <i class="fas fa-user"></i> Lihat Profil
                                     </a>
-                                    <a href="start_chat.php?user_id=<?php echo $match['id']; ?>" class="btn">
+                                    <a href="start_chat?user_id=<?php echo $match['id']; ?>" class="btn">
                                         <i class="fas fa-comments"></i> Chat
                                     </a>
                                 </div>
@@ -2913,7 +2993,7 @@ input:checked + .toggle-slider:before {
                             </div>
                             <p>Mulai chat dengan mahasiswa acak.</p>
                             <form method="post" style="margin-top: 20px;">
-                                <button type="submit" name="start_new_chat" class="btn">Mulai Chat Baru</button>
+                                <button type="submit" name="start_blind_chat" class="btn">Mulai Chat Baru</button>
                             </form>
                         </div>
                         
@@ -2926,7 +3006,7 @@ input:checked + .toggle-slider:before {
                                     <p>Belum ada chat aktif.</p>
                                 <?php else: ?>
                                     <?php foreach ($chat_sessions as $session): ?>
-                                        <a href="chat.php?session_id=<?php echo $session['id']; ?>" class="chat-item">
+                                        <a href="chat?session_id=<?php echo $session['id']; ?>" class="chat-item">
                                             <div class="chat-avatar">
                                                 <img src="<?php echo !empty($session['profile_pic']) ? htmlspecialchars($session['profile_pic']) : 'assets/images/user_profile.png'; ?>" alt="Avatar">
                                             </div>
@@ -3019,7 +3099,7 @@ input:checked + .toggle-slider:before {
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                                 <h3>Pasangan Yang Cocok</h3>
-                                <a href="compatibility.php?reset=true" class="btn btn-outline">Ambil Tes Ulang</a>
+                                <a href="compatibility?reset=true" class="btn btn-outline">Ambil Tes Ulang</a>
                             </div>
                             
                             <?php if (empty($compatible_matches)): ?>
@@ -3045,8 +3125,8 @@ input:checked + .toggle-slider:before {
                                             <?php echo isset($match['bio']) && !empty($match['bio']) ? nl2br(htmlspecialchars(substr($match['bio'], 0, 100) . (strlen($match['bio']) > 100 ? '...' : ''))) : 'Belum ada bio.'; ?>
                                         </div>
                                         <div style="display: flex; gap: 10px; margin-top: 15px;">
-                                            <a href="view_profile.php?id=<?php echo $match['id']; ?>" class="btn btn-outline" style="flex: 1;">Profil</a>
-                                            <a href="start_chat.php?user_id=<?php echo $match['id']; ?>" class="btn" style="flex: 1;">Chat</a>
+                                            <a href="view_profile?id=<?php echo $match['id']; ?>" class="btn btn-outline" style="flex: 1;">Profil</a>
+                                            <a href="start_chat?user_id=<?php echo $match['id']; ?>" class="btn" style="flex: 1;">Chat</a>
                                         </div>
                                     </div>
                                 </div>
@@ -3056,7 +3136,7 @@ input:checked + .toggle-slider:before {
                             
                             <!-- Tombol Reset Tes -->
                             <div style="margin-top: 30px; text-align: center;">
-                                <a href="compatibility.php?reset=true" class="btn" style="background-color: #dc3545; color: white;">Reset Tes & Mulai Ulang</a>
+                                <a href="compatibility?reset=true" class="btn" style="background-color: #dc3545; color: white;">Reset Tes & Mulai Ulang</a>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -3101,10 +3181,10 @@ input:checked + .toggle-slider:before {
                                     <?php echo isset($match['bio']) ? nl2br(htmlspecialchars(substr($match['bio'], 0, 100) . (strlen($match['bio']) > 100 ? '...' : ''))) : 'Belum ada bio.'; ?>
                                 </div>
                                 <div class="match-actions">
-                                    <a href="view_profile.php?id=<?php echo $match['id']; ?>" class="btn btn-outline">
+                                    <a href="view_profile?id=<?php echo $match['id']; ?>" class="btn btn-outline">
                                         <i class="fas fa-user"></i> Lihat Profil
                                     </a>
-                                    <a href="start_chat.php?user_id=<?php echo $match['id']; ?>" class="btn">
+                                    <a href="start_chat?user_id=<?php echo $match['id']; ?>" class="btn">
                                         <i class="fas fa-comments"></i> Chat
                                     </a>
                                 </div>

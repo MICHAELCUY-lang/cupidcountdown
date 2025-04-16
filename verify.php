@@ -1,5 +1,5 @@
 <?php
-// File: verify.php
+// File: verify
 // Verifikasi email pengguna setelah pendaftaran
 
 // Start session
@@ -195,7 +195,7 @@ if (isset($_GET['token']) && !empty($_GET['token'])) {
 <body>
     <div class="container">
         <div class="logo-container">
-            <a href="cupid.php" class="logo">
+            <a href="cupid" class="logo">
                 <i class="fas fa-heart"></i> Cupid
             </a>
         </div>
@@ -214,7 +214,7 @@ if (isset($_GET['token']) && !empty($_GET['token'])) {
                 </div>
                 <p class="message">Terjadi kesalahan dalam proses verifikasi email Anda. 
                 Silakan coba lagi atau hubungi dukungan pelanggan kami untuk bantuan.</p>
-                <a href="cupid.php" class="btn">Kembali ke Beranda</a>
+                <a href="cupid" class="btn">Kembali ke Beranda</a>
             <?php endif; ?>
             
             <?php if (!empty($success)): ?>
@@ -232,7 +232,7 @@ if (isset($_GET['token']) && !empty($_GET['token'])) {
                     $releaseDate = new DateTime('2025-04-16 15:00:00', new DateTimeZone('Asia/Jakarta'));
                     $now = new DateTime('now', new DateTimeZone('Asia/Jakarta'));
                     $is_admin = ($user && isset($user['is_admin']) && $user['is_admin'] == 1);
-                    $redirect_target = ($now >= $releaseDate || $is_admin) ? 'dashboard.php' : 'countdown.php';
+                    $redirect_target = ($now >= $releaseDate || $is_admin) ? 'dashboard' : 'countdown';
                     ?>
                     <a href="<?php echo $redirect_target; ?>" class="btn">Lanjutkan</a>
                     
@@ -243,7 +243,7 @@ if (isset($_GET['token']) && !empty($_GET['token'])) {
                         }, 3000);
                     </script>
                 <?php else: ?>
-                    <a href="login.php" class="btn">Login Sekarang</a>
+                    <a href="login" class="btn">Login Sekarang</a>
                 <?php endif; ?>
             <?php endif; ?>
         </div>

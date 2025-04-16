@@ -4,7 +4,7 @@ session_start();
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
-    header('Location: cupid.php');
+    header('Location: cupid');
     exit();
 }
 
@@ -28,7 +28,7 @@ $user_id = $_SESSION['user_id'];
 
 // Check if valid profile ID is provided
 if ($profile_id <= 0) {
-    header('Location: dashboard.php');
+    header('Location: dashboard');
     exit();
 }
 
@@ -43,7 +43,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
-    header('Location: dashboard.php');
+    header('Location: dashboard');
     exit();
 }
 
@@ -342,14 +342,14 @@ function redirect($url) {
     <header>
         <div class="container">
             <div class="header-content">
-                <a href="cupid.php" class="logo">
+                <a href="cupid" class="logo">
                     <i class="fas fa-heart"></i> Cupid
                 </a>
                 <nav>
                     <ul>
-                        <li><a href="dashboard.php">Dashboard</a></li>
+                        <li><a href="dashboard">Dashboard</a></li>
                         <li>
-                            <a href="dashboard.php?page=chat" class="btn btn-outline">Kembali ke Chat</a>
+                            <a href="dashboard?page=chat" class="btn btn-outline">Kembali ke Chat</a>
                         </li>
                     </ul>
                 </nav>
@@ -399,7 +399,7 @@ function redirect($url) {
                     
                     <div class="profile-actions">
                         <?php if ($profile_id !== $user_id): ?>
-                        <a href="start_chat.php?user_id=<?php echo $profile_id; ?>" class="btn">
+                        <a href="start_chat?user_id=<?php echo $profile_id; ?>" class="btn">
                             <i class="fas fa-comments"></i> Mulai Chat
                         </a>
                         <?php endif; ?>

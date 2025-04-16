@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cupid - Temukan Pasanganmu</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #ff4b6e;
@@ -89,7 +90,8 @@
             width: 30px;
             height: 21px;
             cursor: pointer;
-            margin-left: auto; /* Push to the right */
+            margin-left: auto;
+            z-index: 150; /* Changed from 200 to 150 */
         }
         
         .menu-toggle span {
@@ -136,7 +138,7 @@
             min-height: 80vh;
             display: flex;
             align-items: center;
-            padding: 120px 0 60px;  /* Increased top padding to accommodate larger logo */
+            padding: 120px 0 60px;
             background: linear-gradient(135deg, var(--secondary) 0%, #fff1f3 100%);
         }
         
@@ -366,10 +368,9 @@
                 text-align: center;
             }
             
-            /* Mobile menu styles - RIGHT SIDE */
+            /* Mobile menu styles - MODIFIED */
             .menu-toggle {
                 display: flex;
-                z-index: 120;
                 position: absolute;
                 right: 0;
             }
@@ -384,7 +385,7 @@
                 background-color: var(--light);
                 box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
                 transition: right 0.3s ease;
-                z-index: 110;
+                z-index: 200; /* Higher than menu-toggle */
                 padding: 80px 20px 20px;
             }
             
@@ -396,6 +397,7 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 20px;
+                width: 100%;
             }
             
             nav ul li {
@@ -406,6 +408,14 @@
                 display: block;
                 width: 100%;
                 padding: 12px 15px;
+                text-align: left;
+                font-size: 18px;
+                margin: 0;
+            }
+            
+            nav ul li a.btn {
+                text-align: center;
+                margin-top: 10px;
             }
             
             .overlay {
@@ -419,19 +429,35 @@
                 z-index: 100;
             }
             
-            .overlay.active {
-                display: block;
-            }
-            
+            /* MODIFIED: Position of close-menu button */
             .close-menu {
                 position: absolute;
                 top: 20px;
                 right: 20px;
                 font-size: 28px;
                 cursor: pointer;
+                display: none; /* Hide by default */
+                z-index: 250; /* Higher than nav */
+                color: var(--dark);
+                background: transparent;
+                border: none;
+                width: 30px;
+                height: 30px;
+                line-height: 1;
+                text-align: center;
+            }
+            
+            /* ADDED: Show close button only when menu is active */
+            nav.active .close-menu {
                 display: block;
             }
+            
+            /* ADDED: Hide hamburger when menu is active */
+            nav.active + .menu-toggle {
+                display: none;
+            }
         }
+        
         @media (min-width: 769px) {
             /* Desktop styles - No hamburger */
             .menu-toggle {
@@ -463,10 +489,6 @@
                 display: none;
             }
         }
-            
-            .section-header h2 {
-                font-size: 28px;
-            }
         
         @media (max-width: 576px) {
             .logo img {
@@ -511,8 +533,8 @@
                 font-size: 24px;
             }
         }
-         /*Overlay for mobile menu*/
-             @media (max-width: 480px) {
+        
+        @media (max-width: 480px) {
             .logo-container {
                 display: block;
                 margin-top: 15px;
@@ -525,36 +547,38 @@
                 height: 50px;
                 margin-top: 5px;
             }
-        }        h1 {
+        }
+        
+        h1 {
             font-size: 2.5rem;
             color: var(--dark);
             line-height: 1.3;
             margin: 0;
         }
     </style>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <!-- Header -->
     <header>
         <div class="container">
             <div class="header-content">
-                <a href="cupid.php" class="logo">
-                    <img src="../assets/images/cupid_nobg.png" alt="Cupid" id="logo-img" style="height: 80px;">
+                <a href="cupid" class="logo">
+                    <img src="assets/images/cupid_nobg.png" alt="Cupid" id="logo-img" style="height: 80px;">
                 </a>
+                <nav id="nav">
+                    <div class="close-menu" id="close-menu">&times;</div>
+                    <ul>
+                        <li><a href="#features">Fitur</a></li>
+                        <li><a href="login" id="login-btn">Masuk</a></li>
+                        <li><a href="register" id="register-btn" class="btn">Daftar</a></li>
+                    </ul>
+                </nav>
+                <!-- Moved menu-toggle outside of nav -->
                 <div class="menu-toggle" id="menu-toggle">
                     <span></span>
                     <span></span>
                     <span></span>
                 </div>
-                <nav id="nav">
-                    <div class="close-menu" id="close-menu">&times;</div>
-                    <ul>
-                        <li><a href="#features">Fitur</a></li>
-                        <li><a href="login.php" id="login-btn">Masuk</a></li>
-                        <li><a href="register.php" id="register-btn" class="btn">Daftar</a></li>
-                    </ul>
-                </nav>
             </div>
         </div>
     </header>
@@ -563,12 +587,9 @@
     <section class="hero">
         <div class="container">
             <div class="hero-content">
-             <h1>Temukan <span>Pasanganmu</span> Di <img src="../assets/images/cupid_nobg.png" alt="Cupid" style="height: 160px; vertical-align: middle; display: inline-block;"></h1>
+                <h1>Temukan <span>Pasanganmu</span> Di <img src="assets/images/cupid_nobg.png" alt="Cupid" style="height: 160px; vertical-align: middle; display: inline-block;"></h1>
                 <p>Platform dimana kamu dapat menemukan pasangan yang cocok berdasarkan ketertarikan, hobi, dan tujuan yang sama. Apakah kamu mencari teman, partner belajar, atau romansa, Cupid membantu kamu terhubung dengan orang yang tepat.</p>
-                <a href="register.php" class="btn" id="get-started-btn">Mulai Sekarang</a>
-            </div>
-            <div class="hero-image">
-                    <!--<img src="../assets/images/cupid_nobg.png" alt="Cupid Dating App Preview" style="max-width: 200px; width: 100%; opacity: 0.2;">-->
+                <a href="register" class="btn" id="get-started-btn">Mulai Sekarang</a>
             </div>
         </div>
     </section>
@@ -587,7 +608,7 @@
                     </div>
                     <h3>Profile Creation</h3>
                     <p>Buat profil dengan minat, hobi, dan apa yang kamu cari (teman, partner belajar, atau romansa).</p>
-                    <a href="register.php" class="btn btn-outline">Buat Profil</a>
+                    <a href="register" class="btn btn-outline">Buat Profil</a>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -595,7 +616,7 @@
                     </div>
                     <h3>Anonymous Crush Menfess</h3>
                     <p>Kirim pesan anonim ke crush kamu. Jika keduanya saling suka, nama akan terungkap!</p>
-                    <a href="register.php" class="btn btn-outline">Kirim Menfess</a>
+                    <a href="register" class="btn btn-outline">Kirim Menfess</a>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -603,7 +624,7 @@
                     </div>
                     <h3>Blind Chat</h3>
                     <p>Chat dengan mahasiswa acak tanpa melihat profil mereka terlebih dahulu.</p>
-                    <a href="register.php" class="btn btn-outline">Mulai Chat</a>
+                    <a href="register" class="btn btn-outline">Mulai Chat</a>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -611,7 +632,7 @@
                     </div>
                     <h3>Compatibility Test</h3>
                     <p>Kuis untuk mencocokkan mahasiswa berdasarkan kepribadian, jurusan, dan minat.</p>
-                    <a href="register.php" class="btn btn-outline">Ikuti Tes</a>
+                    <a href="register" class="btn btn-outline">Ikuti Tes</a>
                 </div>
             </div>
         </div>
@@ -622,16 +643,16 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-about">
-                    <a href="cupid.php" class="footer-logo">Cupid</a>
+                    <a href="cupid" class="footer-logo">Cupid</a>
                     <p>Platform untuk menemukan pasangan yang cocok berdasarkan minat, hobi, dan tujuan yang sama.</p>
                 </div>
                 <div class="footer-links-section">
                     <h3 class="footer-heading">Fitur</h3>
                     <ul class="footer-links">
-                        <li><a href="register.php">Profile Creation</a></li>
-                        <li><a href="register.php">Anonymous Crush Menfess</a></li>
-                        <li><a href="register.php">Blind Chat</a></li>
-                        <li><a href="register.php">Compatibility Test</a></li>
+                        <li><a href="register">Profile Creation</a></li>
+                        <li><a href="register">Anonymous Crush Menfess</a></li>
+                        <li><a href="register">Blind Chat</a></li>
+                        <li><a href="register">Compatibility Test</a></li>
                     </ul>
                 </div>
                 <div class="footer-links-section">
@@ -664,62 +685,62 @@
         const menuToggle = document.getElementById('menu-toggle');
         const nav = document.getElementById('nav');
         const closeMenu = document.getElementById('close-menu');
+        const overlay = document.createElement('div'); // Create overlay element
         
-        // Create overlay element 
-        const overlay = document.createElement('div');
-        overlay.className = 'overlay';
+        // Add overlay to the body
         overlay.id = 'overlay';
+        overlay.className = 'overlay';
         document.body.appendChild(overlay);
         
-        menuToggle.addEventListener('click', function() {
+        menuToggle.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent event bubbling
             nav.classList.add('active');
             overlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
         });
         
-        function closeNavMenu() {
+        function closeNavMenu(e) {
+            if (e) e.stopPropagation(); // Prevent event bubbling
             nav.classList.remove('active');
             overlay.classList.remove('active');
-            document.body.style.overflow = '';
         }
         
         closeMenu.addEventListener('click', closeNavMenu);
         overlay.addEventListener('click', closeNavMenu);
         
-        // Close menu when clicking on a nav link
+        // Make sure menu links are clickable
         const navLinks = document.querySelectorAll('nav ul li a');
         navLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                if (window.innerWidth <= 768) {
-                    closeNavMenu();
-                }
-            });
-        });
-        
-        // Responsive adjustments
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 768 && nav.classList.contains('active')) {
-                closeNavMenu();
-            }
-        });
-        
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                if (this.getAttribute('href') !== '#' && this.getAttribute('id') !== 'login-btn' && 
-                    this.getAttribute('id') !== 'register-btn' && this.getAttribute('id') !== 'get-started-btn') {
+            link.addEventListener('click', function(e) {
+                console.log("Link clicked: ", this.textContent); // Debug log
+                
+                // Handle anchor links separately
+                if (this.getAttribute('href').startsWith('#')) {
                     e.preventDefault();
                     const targetId = this.getAttribute('href');
                     const targetElement = document.querySelector(targetId);
                     
                     if (targetElement) {
-                        window.scrollTo({
-                            top: targetElement.offsetTop - 80,
-                            behavior: 'smooth'
-                        });
+                        closeNavMenu();
+                        setTimeout(() => {
+                            window.scrollTo({
+                                top: targetElement.offsetTop - 80,
+                                behavior: 'smooth'
+                            });
+                        }, 300);
                     }
+                } else {
+                    // For non-anchor links, just navigate to the URL
+                    // The browser will handle this normally
+                    closeNavMenu();
                 }
             });
+        });
+        
+        // Close menu if window is resized to desktop size
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768 && nav.classList.contains('active')) {
+                closeNavMenu();
+            }
         });
     </script>
 </body>

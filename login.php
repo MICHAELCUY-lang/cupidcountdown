@@ -1,6 +1,6 @@
 <?php
 // Sertakan file konfigurasi
-require_once 'config.php';
+require_once 'config,php';
 
 // Set timezone to Jakarta (WIB/GMT+7)
 date_default_timezone_set('Asia/Jakarta');
@@ -57,10 +57,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Check if release date has arrived or if user is admin
                     if ($now >= $releaseDate || $is_admin) {
                         // Release date has arrived or user is admin, redirect to dashboard
-                        redirect('dashboard.php');
+                        redirect('dashboard');
                     } else {
                         // Release date hasn't arrived yet, redirect to countdown
-                        redirect('countdown.php');
+                        redirect('countdown');
                     }
                 }
             } else {
@@ -268,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="container">
         <div class="logo-container">
-            <a href="cupid.php" class="logo">
+            <a href="cupid" class="logo">
                 <i class="fas fa-heart"></i> Cupid
             </a>
         </div>
@@ -283,7 +283,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php echo $error; ?>
                 <?php if (strpos($error, 'belum diverifikasi') !== false): ?>
                 <div class="resend-verification">
-                    <a href="resend_verification.php?email=<?php echo urlencode($email); ?>">Kirim ulang email verifikasi</a>
+                    <a href="resend_verification?email=<?php echo urlencode($email); ?>">Kirim ulang email verifikasi</a>
                 </div>
                 <?php endif; ?>
             </div>
@@ -295,7 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <?php endif; ?>
             
-            <form method="post" action="login.php">
+            <form method="post" action="login">
                 <div class="form-group">
                     <label for="email">Email</label>
                     <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($email); ?>" placeholder="email@student.president.ac.id" required>
@@ -309,8 +309,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit" class="btn">Masuk</button>
                 
                 <div class="extra-links">
-                    <p>Belum punya akun? <a href="register.php">Daftar</a></p>
-                    <p style="margin-top: 10px;"><a href="forgot_password.php">Lupa password?</a></p>
+                    <p>Belum punya akun? <a href="register">Daftar</a></p>
+                    <p style="margin-top: 10px;"><a href="forgot_password">Lupa password?</a></p>
                 </div>
             </form>
         </div>
