@@ -1637,11 +1637,11 @@ input:checked + .toggle-slider:before {
                 <nav>
                     <ul>
                             <div class="theme-toggle">
-    <button id="theme-toggle-btn" aria-label="Toggle dark mode">
-        <i class="fas fa-moon"></i>
-        <i class="fas fa-sun"></i>
-    </button>
-</div>
+                        <button id="theme-toggle-btn" aria-label="Toggle dark mode">
+                            <i class="fas fa-moon"></i>
+                            <i class="fas fa-sun"></i>
+                        </button>
+                    </div>
                         <li><a href="dashboard">Dashboard</a></li>
                         <li>
                             <a href="logout" class="btn btn-outline">Keluar</a>
