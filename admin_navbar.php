@@ -8,7 +8,6 @@
                 <ul>
                     <li><a href="admin_dashboard.php">Dashboard</a></li>
                     <li><a href="admin_users.php">Users</a></li>
-                    <li><a href="admin_payments.php">Payments</a></li>
                     <li><a href="admin_feedback.php">Feedback</a></li>
                     <li>
                         <a href="logout.php" class="btn btn-outline">Logout</a>
