@@ -282,6 +282,53 @@ CREATE TABLE IF NOT EXISTS moderation_logs (
     FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+-- Notification System Database Setup for Cupid
+-- Add this to your db.sql file or run separately
+
+-- Create notifications table
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    sender_id INT NULL,
+    type ENUM('message', 'like', 'match', 'system') NOT NULL,
+    content TEXT NOT NULL,
+    related_id INT NULL,
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Create notification settings table
+CREATE TABLE IF NOT EXISTS notification_settings (
+    user_id INT PRIMARY KEY,
+    email_messages TINYINT(1) NOT NULL DEFAULT 1,
+    email_likes TINYINT(1) NOT NULL DEFAULT 1,
+    email_matches TINYINT(1) NOT NULL DEFAULT 1,
+    browser_notifications TINYINT(1) NOT NULL DEFAULT 1,
+    sound_enabled TINYINT(1) NOT NULL DEFAULT 1,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Add index for faster notification queries
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_notifications_is_read ON notifications(is_read);
+CREATE INDEX idx_notifications_created_at ON notifications(created_at);
+
+-- Sample notification data for testing
+INSERT INTO notifications (user_id, sender_id, type, content, is_read)
+VALUES 
+(1, 2, 'message', 'Jane sent you a message', 0),
+(1, 3, 'like', 'Alice liked your menfess', 0),
+(1, NULL, 'system', 'Welcome to Cupid! Complete your profile to start matching.', 1),
+(2, 1, 'match', 'You have a new match with John!', 0);
+
+-- Default notification settings for existing users
+INSERT INTO notification_settings (user_id)
+SELECT id FROM users
+ON DUPLICATE KEY UPDATE user_id = user_id;
+
 -- menambahkan admin
 UPDATE users SET is_admin = 1 WHERE id = 123; -- ganti 123 dengan id admin yang sesuai
 

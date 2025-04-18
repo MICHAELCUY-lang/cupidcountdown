@@ -470,6 +470,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
     <title>Cupid - Dashboard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link href="assets/css/style.css" rel="stylesheet">
+    <link href="assets/css/notification-styles.css" rel="stylesheet">
     <style>
         /* Complete CSS for Cupid Dashboard */
 
@@ -1642,6 +1643,41 @@ input:checked + .toggle-slider:before {
                             <i class="fas fa-sun"></i>
                         </button>
                     </div>
+                    <li class="notification-container">
+    <div id="notification-button" class="notification-bell">
+        <i class="fas fa-bell"></i>
+        <span id="notification-badge" class="notification-badge" style="display: none;">0</span>
+    </div>
+    <div id="notification-panel" class="notification-panel">
+        <div class="notification-header">
+            <h3>Notifications</h3>
+            <div class="notification-actions">
+                <span id="mark-all-read" class="notification-clear">Mark all as read</span>
+                <span id="clear-all-notifications" class="notification-clear">Clear all</span>
+            </div>
+        </div>
+        <div id="notifications-list" class="notification-list">
+            <div class="empty-notifications">No notifications yet</div>
+        </div>
+        <div class="notification-settings">
+            <h4>Settings</h4>
+            <div class="setting-item">
+                <span class="setting-label">Notification Sound</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="notification-sound-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span class="setting-label">Browser Notifications</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="browser-notifications-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+</li>
                         <li><a href="dashboard">Dashboard</a></li>
                         <li>
                             <a href="logout" class="btn btn-outline">Keluar</a>
