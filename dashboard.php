@@ -3353,6 +3353,15 @@ input:checked + .toggle-slider:before {
     </style>
 <?php endif; ?>
 </section>
+<div id="toast-notification" class="toast-notification">
+    <div class="toast-icon">
+        <i class="fas fa-bell"></i>
+    </div>
+    <div id="toast-message" class="toast-message"></div>
+    <div class="toast-close">
+        <i class="fas fa-times"></i>
+    </div>
+</div>
     <script>
         // JavaScript untuk interaktivitas
         document.addEventListener('DOMContentLoaded', function() {
@@ -3413,6 +3422,65 @@ input:checked + .toggle-slider:before {
         if (themeToggleBtn) {
             themeToggleBtn.addEventListener('click', toggleTheme);
         }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load current settings
+        fetch('notification_api.php?action=get_settings')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const settings = data.settings;
+                    
+                    // Update form checkboxes
+                    document.getElementById('email-messages').checked = settings.email_messages == 1;
+                    document.getElementById('email-likes').checked = settings.email_likes == 1;
+                    document.getElementById('email-matches').checked = settings.email_matches == 1;
+                    document.getElementById('browser-notifications').checked = settings.browser_notifications == 1;
+                    document.getElementById('sound-enabled').checked = settings.sound_enabled == 1;
+                }
+            })
+            .catch(error => console.error('Error loading notification settings:', error));
+        
+        // Test sound button
+        document.getElementById('test-sound').addEventListener('click', function() {
+            const sound = document.getElementById('notification-sound');
+            if (sound) {
+                sound.play();
+            }
+        });
+        
+        // Save settings
+        document.getElementById('notification-settings-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            formData.append('action', 'update_settings');
+            
+            // Convert checkboxes to 0/1
+            ['email_messages', 'email_likes', 'email_matches', 'browser_notifications', 'sound_enabled'].forEach(setting => {
+                const checkbox = document.querySelector(`[name="${setting}"]`);
+                formData.set(setting, checkbox.checked ? 1 : 0);
+            });
+            
+            fetch('notification_api.php', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        alert('Notification settings saved successfully');
+                    } else {
+                        alert('Failed to save notification settings');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving notification settings:', error);
+                    alert('An error occurred while saving notification settings');
+                });
+        });
     });
     </script>
 </body>
