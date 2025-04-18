@@ -2271,6 +2271,15 @@ input:checked + .toggle-slider:before {
                     $sent_menfess = array_filter($menfess_messages, function($msg) {
                         return $msg['type'] === 'sent';
                     });
+
+                    if ($like_stmt->execute()) {
+    // Send notification to the menfess sender - tambahkan ini
+    include_once 'notifications.php';
+    include_once 'notification_integration.php';
+    notifyMenfessLike($conn, $menfess_id, $user_id);
+    
+    // Kode lainnya yang sudah ada
+}
                     
                     if (empty($sent_menfess)):
                     ?>

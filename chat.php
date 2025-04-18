@@ -79,6 +79,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_message'])) {
             // Successfully sent, refresh the page to display new message
             header("Location: chat.php?session_id=" . $session_id);
             exit();
+            if ($insert_stmt->execute()) {
+    // Get the receiver ID (the other person in the chat)
+    $partner_id = ($chat_session['user1_id'] == $user_id) ? $chat_session['user2_id'] : $chat_session['user1_id'];
+    
+    // Send notification - tambahkan ini
+    include_once 'notifications.php';
+    include_once 'notification_integration.php';
+    notifyNewMessage($conn, $partner_id, $user_id, $message, $session_id);
+    
+    // Successfully sent, refresh the page to display new message
+    header("Location: chat.php?session_id=" . $session_id);
+    exit();
+}
         } else {
             $error_message = "Error sending message: " . $conn->error;
         }
