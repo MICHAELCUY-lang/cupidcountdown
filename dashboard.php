@@ -1630,63 +1630,72 @@ input:checked + .toggle-slider:before {
     
     <!-- Header -->
     <header>
-        <div class="container">
-            <div class="header-content">
-                <a href="cupid" class="logo">
-                    <i class="fas fa-heart"></i> Cupid
-                </a>
-                <nav>
-                    <ul>
-                            <div class="theme-toggle">
+    <div class="container">
+        <div class="header-content">
+            <!-- Logo -->
+            <a href="cupid" class="logo">
+                <i class="fas fa-heart"></i> Cupid
+            </a>
+            
+            <!-- Navigation -->
+            <nav>
+                <ul>
+                    <li><a href="dashboard">Dashboard</a></li>
+                    
+                    <!-- Notification Bell -->
+                    <li class="notification-container">
+                        <div id="notification-button" class="notification-bell">
+                            <i class="fas fa-bell"></i>
+                            <span id="notification-badge" class="notification-badge" style="display: none;">0</span>
+                        </div>
+                        <div id="notification-panel" class="notification-panel">
+                            <div class="notification-header">
+                                <h3>Notifications</h3>
+                                <div class="notification-actions">
+                                    <span id="mark-all-read" class="notification-clear">Mark all as read</span>
+                                    <span id="clear-all-notifications" class="notification-clear">Clear all</span>
+                                </div>
+                            </div>
+                            <div id="notifications-list" class="notification-list">
+                                <div class="empty-notifications">No notifications yet</div>
+                            </div>
+                            <div class="notification-settings">
+                                <h4>Settings</h4>
+                                <div class="setting-item">
+                                    <span class="setting-label">Notification Sound</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="notification-sound-toggle" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <span class="setting-label">Browser Notifications</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="browser-notifications-toggle" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    
+                    <!-- Theme Toggle -->
+                    <li class="theme-toggle">
                         <button id="theme-toggle-btn" aria-label="Toggle dark mode">
                             <i class="fas fa-moon"></i>
                             <i class="fas fa-sun"></i>
                         </button>
-                    </div>
-                    <li class="notification-container">
-    <div id="notification-button" class="notification-bell">
-        <i class="fas fa-bell"></i>
-        <span id="notification-badge" class="notification-badge" style="display: none;">0</span>
-    </div>
-    <div id="notification-panel" class="notification-panel">
-        <div class="notification-header">
-            <h3>Notifications</h3>
-            <div class="notification-actions">
-                <span id="mark-all-read" class="notification-clear">Mark all as read</span>
-                <span id="clear-all-notifications" class="notification-clear">Clear all</span>
-            </div>
-        </div>
-        <div id="notifications-list" class="notification-list">
-            <div class="empty-notifications">No notifications yet</div>
-        </div>
-        <div class="notification-settings">
-            <h4>Settings</h4>
-            <div class="setting-item">
-                <span class="setting-label">Notification Sound</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="notification-sound-toggle" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            <div class="setting-item">
-                <span class="setting-label">Browser Notifications</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="browser-notifications-toggle" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
+                    </li>
+                    
+                    <!-- Logout Button -->
+                    <li>
+                        <a href="logout" class="btn btn-outline">Keluar</a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
-</li>
-                        <li><a href="dashboard">Dashboard</a></li>
-                        <li>
-                            <a href="logout" class="btn btn-outline">Keluar</a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
-    </header>
+</header>
 
     <!-- Dashboard Section -->
     <section class="dashboard">
@@ -2269,17 +2278,8 @@ input:checked + .toggle-slider:before {
                 <div id="sent-menfess" class="tab-content">
                     <?php
                     $sent_menfess = array_filter($menfess_messages, function($msg) {
-                        return $msg['type'] === 'sent';
-                    });
-
-                    if ($like_stmt->execute()) {
-    // Send notification to the menfess sender - tambahkan ini
-    include_once 'notifications.php';
-    include_once 'notification_integration.php';
-    notifyMenfessLike($conn, $menfess_id, $user_id);
-    
-    // Kode lainnya yang sudah ada
-}
+    return $msg['type'] === 'sent';
+});
                     
                     if (empty($sent_menfess)):
                     ?>
@@ -3424,34 +3424,58 @@ input:checked + .toggle-slider:before {
         }
     });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Load current settings
-        fetch('notification_api.php?action=get_settings')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const settings = data.settings;
-                    
-                    // Update form checkboxes
-                    document.getElementById('email-messages').checked = settings.email_messages == 1;
-                    document.getElementById('email-likes').checked = settings.email_likes == 1;
-                    document.getElementById('email-matches').checked = settings.email_matches == 1;
-                    document.getElementById('browser-notifications').checked = settings.browser_notifications == 1;
-                    document.getElementById('sound-enabled').checked = settings.sound_enabled == 1;
+   document.addEventListener('DOMContentLoaded', function() {
+    // Load current settings
+    fetch('notification_api.php?action=get_settings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const settings = data.settings;
+                
+                // Update form checkboxes with null checks
+                const emailMessages = document.getElementById('email-messages');
+                if (emailMessages) {
+                    emailMessages.checked = settings.email_messages == 1;
                 }
-            })
-            .catch(error => console.error('Error loading notification settings:', error));
-        
-        // Test sound button
-        document.getElementById('test-sound').addEventListener('click', function() {
+                
+                const emailLikes = document.getElementById('email-likes');
+                if (emailLikes) {
+                    emailLikes.checked = settings.email_likes == 1;
+                }
+                
+                const emailMatches = document.getElementById('email-matches');
+                if (emailMatches) {
+                    emailMatches.checked = settings.email_matches == 1;
+                }
+                
+                const browserNotifications = document.getElementById('browser-notifications');
+                if (browserNotifications) {
+                    browserNotifications.checked = settings.browser_notifications == 1;
+                }
+                
+                const soundEnabled = document.getElementById('sound-enabled');
+                if (soundEnabled) {
+                    soundEnabled.checked = settings.sound_enabled == 1;
+                }
+            }
+        })
+        .catch(error => console.error('Error loading notification settings:', error));
+    
+    // Test sound button
+    const testSound = document.getElementById('test-sound');
+    if (testSound) {
+        testSound.addEventListener('click', function() {
             const sound = document.getElementById('notification-sound');
             if (sound) {
                 sound.play();
             }
         });
-        
-        // Save settings
-        document.getElementById('notification-settings-form').addEventListener('submit', function(e) {
+    }
+    
+    // Save settings
+    const settingsForm = document.getElementById('notification-settings-form');
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
             const formData = new FormData(this);
@@ -3460,7 +3484,9 @@ input:checked + .toggle-slider:before {
             // Convert checkboxes to 0/1
             ['email_messages', 'email_likes', 'email_matches', 'browser_notifications', 'sound_enabled'].forEach(setting => {
                 const checkbox = document.querySelector(`[name="${setting}"]`);
-                formData.set(setting, checkbox.checked ? 1 : 0);
+                if (checkbox) {
+                    formData.set(setting, checkbox.checked ? 1 : 0);
+                }
             });
             
             fetch('notification_api.php', {
@@ -3481,7 +3507,40 @@ input:checked + .toggle-slider:before {
                     alert('An error occurred while saving notification settings');
                 });
         });
-    });
+    }
+    
+    // Mark all as read
+    const markAllRead = document.getElementById('mark-all-read');
+    if (markAllRead) {
+        markAllRead.addEventListener('click', function() {
+            console.log('Marking all as read...');
+            
+            fetch('notification_api.php?action=mark_all_read')
+                .then(response => {
+                    console.log('Response received:', response);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Data received:', data);
+                    if (data.success) {
+                        // Pastikan loadNotifications() dan updateUnreadCount() sudah didefinisikan
+                        if (typeof loadNotifications === 'function') {
+                            loadNotifications();
+                        }
+                        if (typeof updateUnreadCount === 'function') {
+                            updateUnreadCount(0);
+                        }
+                    } else {
+                        console.error('Error marking all as read:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking all as read:', error);
+                });
+        });
+    }
+});
     </script>
+    <script src="assets/js/notifications.js"></script>
 </body>
 </html>

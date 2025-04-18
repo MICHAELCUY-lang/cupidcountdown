@@ -39,7 +39,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 
-// Get chat session data (removed anonymous-related fields)
+// Get chat session data
 $session_sql = "SELECT cs.*, 
                 u1.name as user1_name, 
                 u2.name as user2_name,
@@ -64,8 +64,6 @@ if ($session_result->num_rows === 0) {
 $chat_session = $session_result->fetch_assoc();
 $partner_id = $chat_session['partner_id'];
 
-// Always give direct access to view profile - no payment check needed
-
 // Handle new message submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_message'])) {
     $message = $_POST['message'];
@@ -76,22 +74,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_message'])) {
         $insert_stmt->bind_param("iis", $session_id, $user_id, $message);
         
         if ($insert_stmt->execute()) {
+            // Get the partner ID for notification
+            $partner_id = ($chat_session['user1_id'] == $user_id) ? $chat_session['user2_id'] : $chat_session['user1_id'];
+            
+            // Send notification
+            include_once 'notifications.php';
+            include_once 'notification_integration.php';
+            notifyNewMessage($conn, $partner_id, $user_id, $message, $session_id);
+            
             // Successfully sent, refresh the page to display new message
             header("Location: chat.php?session_id=" . $session_id);
             exit();
-            if ($insert_stmt->execute()) {
-    // Get the receiver ID (the other person in the chat)
-    $partner_id = ($chat_session['user1_id'] == $user_id) ? $chat_session['user2_id'] : $chat_session['user1_id'];
-    
-    // Send notification - tambahkan ini
-    include_once 'notifications.php';
-    include_once 'notification_integration.php';
-    notifyNewMessage($conn, $partner_id, $user_id, $message, $session_id);
-    
-    // Successfully sent, refresh the page to display new message
-    header("Location: chat.php?session_id=" . $session_id);
-    exit();
-}
         } else {
             $error_message = "Error sending message: " . $conn->error;
         }
@@ -136,6 +129,8 @@ function isMessageDeleted($conn, $message_id) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat - Cupid</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="assets/css/style.css" rel="stylesheet">
+    <link href="assets/css/notification-styles.css" rel="stylesheet">
     <style>
         :root {
             --primary: #ff4b6e;
@@ -571,6 +566,33 @@ function isMessageDeleted($conn, $message_id) {
             color: var(--secondary);
         }
         
+        /* Dark mode support */
+        [data-theme="dark"] {
+            --light: #1e1e1e;
+            --dark: #f5f5f5;
+            --secondary: #662d39;
+            --accent: #ff8fa3;
+            --card-bg: #2a2a2a;
+            --border-color: #444444;
+        }
+        
+        [data-theme="dark"] .received .message-content {
+            background-color: #2a2a2a;
+            color: #f5f5f5;
+        }
+        
+        [data-theme="dark"] .dropdown-content {
+            background-color: #1e1e1e;
+        }
+        
+        [data-theme="dark"] .dropdown-content a {
+            color: #f5f5f5;
+        }
+        
+        [data-theme="dark"] .dropdown-content a:hover {
+            background-color: #2a2a2a;
+        }
+        
         @media (max-width: 767px) {
             .message-content {
                 max-width: 85%;
@@ -603,6 +625,41 @@ function isMessageDeleted($conn, $message_id) {
                 </a>
                 <nav>
                     <ul>
+                        <li class="notification-container">
+                            <div id="notification-button" class="notification-bell">
+                                <i class="fas fa-bell"></i>
+                                <span id="notification-badge" class="notification-badge" style="display: none;">0</span>
+                            </div>
+                            <div id="notification-panel" class="notification-panel">
+                                <div class="notification-header">
+                                    <h3>Notifications</h3>
+                                    <div class="notification-actions">
+                                        <span id="mark-all-read" class="notification-clear">Mark all as read</span>
+                                        <span id="clear-all-notifications" class="notification-clear">Clear all</span>
+                                    </div>
+                                </div>
+                                <div id="notifications-list" class="notification-list">
+                                    <div class="empty-notifications">No notifications yet</div>
+                                </div>
+                                <div class="notification-settings">
+                                    <h4>Settings</h4>
+                                    <div class="setting-item">
+                                        <span class="setting-label">Notification Sound</span>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="notification-sound-toggle" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="setting-item">
+                                        <span class="setting-label">Browser Notifications</span>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="browser-notifications-toggle" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
                         <li><a href="dashboard.php">Dashboard</a></li>
                         <li>
                             <a href="dashboard.php?page=chat" class="btn btn-outline">Kembali ke Chat</a>
@@ -705,6 +762,17 @@ function isMessageDeleted($conn, $message_id) {
             </div>
         </div>
     </section>
+    
+    <!-- Toast Notification for alerts -->
+    <div id="toast-notification" class="toast-notification">
+        <div class="toast-icon">
+            <i class="fas fa-bell"></i>
+        </div>
+        <div id="toast-message" class="toast-message"></div>
+        <div class="toast-close">
+            <i class="fas fa-times"></i>
+        </div>
+    </div>
         
     <script>
         // Auto scroll to bottom of chat
@@ -759,12 +827,12 @@ function isMessageDeleted($conn, $message_id) {
                             messageEl.innerHTML = '<div class="message-deleted"><i class="fas fa-ban"></i> Pesan telah dihapus</div>';
                         }
                     } else {
-                        alert('Gagal menghapus pesan: ' + data.message);
+                        showToast('Gagal menghapus pesan: ' + data.message);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Terjadi kesalahan saat menghapus pesan');
+                    showToast('Terjadi kesalahan saat menghapus pesan');
                 });
             }
         }
@@ -801,18 +869,252 @@ function isMessageDeleted($conn, $message_id) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Chat berhasil dihapus');
-                    // Redirect to dashboard
-                    window.location.href = 'dashboard.php?page=chat';
+                    showToast('Chat berhasil dihapus');
+                    // Redirect to dashboard after 1 second
+                    setTimeout(function() {
+                        window.location.href = 'dashboard.php?page=chat';
+                    }, 1000);
                 } else {
-                    alert('Gagal menghapus chat: ' + data.message);
+                    showToast('Gagal menghapus chat: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan saat menghapus chat');
+                showToast('Terjadi kesalahan saat menghapus chat');
             });
         }
+        
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast-notification');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+            
+            // Auto hide after 3 seconds
+            setTimeout(function() {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Close toast when clicking the close button
+        document.querySelector('.toast-close').addEventListener('click', function() {
+            document.getElementById('toast-notification').classList.remove('show');
+        });
+        
+        // Notification bell functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationButton = document.getElementById('notification-button');
+            const notificationPanel = document.getElementById('notification-panel');
+            const notificationBadge = document.getElementById('notification-badge');
+            
+            // Toggle notification panel
+            if (notificationButton) {
+                notificationButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    notificationPanel.classList.toggle('show');
+                    
+                    // If showing panel, mark notifications as read
+                    if (notificationPanel.classList.contains('show')) {
+                        loadNotifications();
+                    }
+                });
+            }
+            
+            // Close panel when clicking outside
+            document.addEventListener('click', function(e) {
+                if (notificationPanel && notificationPanel.classList.contains('show') && 
+                    !notificationPanel.contains(e.target) && 
+                    e.target !== notificationButton) {
+                    notificationPanel.classList.remove('show');
+                }
+            });
+            
+            // Mark all as read
+            const markAllRead = document.getElementById('mark-all-read');
+            if (markAllRead) {
+                markAllRead.addEventListener('click', function() {
+                    fetch('notification_api.php?action=mark_all_read')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                loadNotifications();
+                                updateUnreadCount(0);
+                            }
+                        })
+                        .catch(error => console.error('Error marking all as read:', error));
+                });
+            }
+            
+            // Clear all notifications
+            const clearAllBtn = document.getElementById('clear-all-notifications');
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to clear all notifications?')) {
+                        fetch('notification_api.php?action=clear_all')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    document.getElementById('notifications-list').innerHTML = 
+                                        '<div class="empty-notifications">No notifications yet</div>';
+                                    updateUnreadCount(0);
+                                }
+                            })
+                            .catch(error => console.error('Error clearing notifications:', error));
+                    }
+                });
+            }
+            
+            // Load notifications 
+            function loadNotifications() {
+                const notificationsList = document.getElementById('notifications-list');
+                if (notificationsList) {
+                    notificationsList.innerHTML = '<div class="notification-loading">Loading notifications...</div>';
+                    
+                    fetch('notification_api.php?action=get_notifications')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                if (data.notifications.length === 0) {
+                                    notificationsList.innerHTML = '<div class="empty-notifications">No notifications yet</div>';
+                                } else {
+                                    notificationsList.innerHTML = '';
+                                    data.notifications.forEach(notification => {
+                                        const notifItem = document.createElement('div');
+                                        notifItem.className = 'notification-item' + (notification.is_read ? '' : ' unread');
+                                        notifItem.dataset.id = notification.id;
+                                        
+                                        // Create notification content
+                                        notifItem.innerHTML = `
+                                            <div class="notification-avatar">
+                                                <div class="avatar-placeholder">
+                                                    <i class="${getNotificationIcon(notification.type)}"></i>
+                                                </div>
+                                            </div>
+                                            <div class="notification-content">
+                                                <div class="notification-message">${notification.message}</div>
+                                                <div class="notification-time">${formatTimestamp(notification.created_at)}</div>
+                                            </div>
+                                        `;
+                                        
+                                        // Add click event to mark as read
+                                        notifItem.addEventListener('click', function() {
+                                            markAsRead(notification.id);
+                                            // Handle click action based on notification type
+                                            if (notification.action_link) {
+                                                window.location.href = notification.action_link;
+                                            }
+                                        });
+                                        
+                                        notificationsList.appendChild(notifItem);
+                                    });
+                                }
+                                
+                                // Update unread count
+                                updateUnreadCount(data.unread_count);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading notifications:', error);
+                            notificationsList.innerHTML = '<div class="notification-loading">Error loading notifications.</div>';
+                        });
+                }
+            }
+            
+            // Mark a notification as read
+            function markAsRead(notificationId) {
+                fetch(`notification_api.php?action=mark_read&id=${notificationId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update UI
+                            const notifItem = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+                            if (notifItem) {
+                                notifItem.classList.remove('unread');
+                            }
+                            
+                            // Update unread count
+                            updateUnreadCount(data.unread_count);
+                        }
+                    })
+                    .catch(error => console.error('Error marking as read:', error));
+            }
+            
+            // Update the badge with unread count
+            function updateUnreadCount(count) {
+                if (count > 0) {
+                    notificationBadge.textContent = count;
+                    notificationBadge.style.display = 'flex';
+                    notificationBadge.classList.add('new');
+                } else {
+                    notificationBadge.style.display = 'none';
+                    notificationBadge.classList.remove('new');
+                }
+            }
+            
+            // Get appropriate icon for notification type
+            function getNotificationIcon(type) {
+                switch (type) {
+                    case 'message':
+                        return 'fas fa-envelope';
+                    case 'like':
+                        return 'fas fa-heart';
+                    case 'match':
+                        return 'fas fa-heart';
+                    case 'system':
+                        return 'fas fa-bell';
+                    default:
+                        return 'fas fa-bell';
+                }
+            }
+            
+            // Format timestamp to relative time
+            function formatTimestamp(timestamp) {
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diffTime = Math.abs(now - date);
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays > 7) {
+                    return date.toLocaleDateString();
+                } else if (diffDays > 0) {
+                    return diffDays + ' day' + (diffDays > 1 ? 's' : '') + ' ago';
+                } else {
+                    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+                    if (diffHours > 0) {
+                        return diffHours + ' hour' + (diffHours > 1 ? 's' : '') + ' ago';
+                    } else {
+                        const diffMinutes = Math.floor(diffTime / (1000 * 60));
+                        if (diffMinutes > 0) {
+                            return diffMinutes + ' minute' + (diffMinutes > 1 ? 's' : '') + ' ago';
+                        } else {
+                            return 'Just now';
+                        }
+                    }
+                }
+            }
+            
+            // Check for new notifications periodically
+            function checkForNewNotifications() {
+                fetch('notification_api.php?action=get_unread_count')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            updateUnreadCount(data.count);
+                        }
+                    })
+                    .catch(error => console.error('Error checking notifications:', error));
+            }
+            
+            // Load notifications on page load
+            loadNotifications();
+            
+            // Check for new notifications every 30 seconds
+            setInterval(checkForNewNotifications, 30000);
+        });
     </script>
+    
+    <script src="assets/js/notifications.js"></script>
 </body>
 </html>

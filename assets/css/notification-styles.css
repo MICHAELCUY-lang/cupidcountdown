@@ -290,22 +290,31 @@ input:checked + .toggle-slider:before {
 /* Toast Notification */
 .toast-notification {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 20px;          /* Keep it at the bottom */
+    right: 20px;           /* Position from the right */
     background-color: var(--card-bg);
     color: var(--text-color);
-    padding: 15px 20px;
+    padding: 12px 15px;    /* Slightly reduced padding */
     border-radius: 8px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
     max-width: 300px;
-    z-index: 9999;
+    z-index: 9999;         /* Ensure it's above other elements */
     transform: translateY(100px);
     opacity: 0;
     transition: all 0.3s;
+    pointer-events: none;  /* Add this to prevent it from blocking clicks */
 }
 
+/* For smaller screens */
+@media (max-width: 576px) {
+    .toast-notification {
+        right: 10px;
+        left: auto;        /* Change this from the media query */
+        max-width: 80%;    /* Limit width to percentage instead of stretching */
+    }
+}
 .toast-notification.show {
     transform: translateY(0);
     opacity: 1;

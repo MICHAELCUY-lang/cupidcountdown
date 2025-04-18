@@ -48,7 +48,7 @@ function notifyNewMessage($conn, $receiver_id, $sender_id, $message, $chat_sessi
                 <p>You have received a new message from <strong>" . htmlspecialchars($sender_name) . "</strong>.</p>
                 <p><em>\"" . htmlspecialchars($message_preview) . "\"</em></p>
                 <p style='text-align: center;'>
-                    <a href='https://" . $_SERVER['HTTP_HOST'] . "/chat.php?session_id=" . $chat_session_id . "' class='button'>
+                    <a href='https://" . $_SERVER['HTTP_HOST'] . "/chat?session_id=" . $chat_session_id . "' class='button'>
                         View Message
                     </a>
                 </p>
@@ -106,7 +106,7 @@ function notifyMenfessLike($conn, $menfess_id, $liker_id) {
                 <p><strong>" . htmlspecialchars($liker_name) . "</strong> liked your menfess:</p>
                 <p><em>\"" . htmlspecialchars($message_preview) . "\"</em></p>
                 <p style='text-align: center;'>
-                    <a href='https://" . $_SERVER['HTTP_HOST'] . "/dashboard.php?page=menfess' class='button'>
+                    <a href='https://" . $_SERVER['HTTP_HOST'] . "/dashboard?page=menfess' class='button'>
                         View Menfess
                     </a>
                 </p>
@@ -151,7 +151,7 @@ function notifyNewMatch($conn, $user1_id, $user2_id, $menfess_id) {
             <p>You have a new match with <strong>" . htmlspecialchars($users[$user2_id]['name']) . "</strong>!</p>
             <p>You both liked each other's menfess, and now you can start chatting!</p>
             <p style='text-align: center;'>
-                <a href='https://" . $_SERVER['HTTP_HOST'] . "/dashboard.php?page=matches' class='button'>
+                <a href='https://" . $_SERVER['HTTP_HOST'] . "/dashboard?page=matches' class='button'>
                     View Match
                 </a>
             </p>
@@ -169,7 +169,7 @@ function notifyNewMatch($conn, $user1_id, $user2_id, $menfess_id) {
             <p>You have a new match with <strong>" . htmlspecialchars($users[$user1_id]['name']) . "</strong>!</p>
             <p>You both liked each other's menfess, and now you can start chatting!</p>
             <p style='text-align: center;'>
-                <a href='https://" . $_SERVER['HTTP_HOST'] . "/dashboard.php?page=matches' class='button'>
+                <a href='https://" . $_SERVER['HTTP_HOST'] . "/dashboard?page=matches' class='button'>
                     View Match
                 </a>
             </p>
