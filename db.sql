@@ -329,12 +329,94 @@ INSERT INTO notification_settings (user_id)
 SELECT id FROM users
 ON DUPLICATE KEY UPDATE user_id = user_id;
 
+-- SQL untuk membuat tabel-tabel yang diperlukan untuk fitur promosi
+
+-- Tabel untuk menyimpan data promosi
+CREATE TABLE IF NOT EXISTS promotions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    description TEXT,
+    image_url VARCHAR(255) NOT NULL,
+    target_url VARCHAR(255) NOT NULL,
+    duration_days INT NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    order_id VARCHAR(100),
+    transaction_id VARCHAR(100),
+    status ENUM('pending', 'active', 'expired', 'cancelled') DEFAULT 'pending',
+    impressions INT DEFAULT 0,
+    clicks INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    activated_at TIMESTAMP NULL,
+    expiry_date TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Tabel untuk mencatat transaksi pembayaran
+CREATE TABLE IF NOT EXISTS promotion_transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    promotion_id INT NOT NULL,
+    user_id INT NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    transaction_id VARCHAR(100),
+    order_id VARCHAR(100),
+    status VARCHAR(50) DEFAULT 'pending',
+    payment_method VARCHAR(50),
+    transaction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (promotion_id) REFERENCES promotions(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Tabel untuk mencatat event promosi (impressions, clicks)
+CREATE TABLE IF NOT EXISTS promotion_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    promotion_id INT NOT NULL,
+    user_id INT,
+    event_type ENUM('impression', 'click') NOT NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (promotion_id) REFERENCES promotions(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Tabel untuk mencatat dismissal promosi oleh user
+CREATE TABLE IF NOT EXISTS promotion_dismissals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    promotion_id INT NOT NULL,
+    dismissed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY (user_id, promotion_id, DATE(dismissed_at)),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (promotion_id) REFERENCES promotions(id) ON DELETE CASCADE
+);
+
+-- Procedure untuk membatalkan promosi yang expired
+DELIMITER //
+CREATE PROCEDURE update_expired_promotions()
+BEGIN
+    UPDATE promotions
+    SET status = 'expired'
+    WHERE status = 'active' AND expiry_date < NOW();
+END //
+DELIMITER ;
+
+-- Event untuk menjalankan procedure update_expired_promotions setiap hari
+CREATE EVENT IF NOT EXISTS daily_expire_promotions
+ON SCHEDULE EVERY 1 DAY
+DO
+ CALL update_expired_promotions();
+
 -- menambahkan admin
 UPDATE users SET is_admin = 1 WHERE id = 123; -- ganti 123 dengan id admin yang sesuai
 
 ALTER TABLE users 
 ADD COLUMN last_activity TIMESTAMP NULL,
 ADD INDEX (last_activity);
+
+ALTER TABLE menfess ADD COLUMN is_revealed TINYINT DEFAULT 0;
+
+
 -- Script untuk Login dan Register
 
 -- login.php
