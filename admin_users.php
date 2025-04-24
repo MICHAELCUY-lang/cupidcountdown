@@ -105,7 +105,7 @@ $total_pages = ceil($total_users / $per_page);
                             <label for="status">Status:</label>
                             <select id="status" name="status">
                                 <option value="" <?php echo $status === '' ? 'selected' : ''; ?>>All</option>
-                                <option value="active" <?php echo $status === 'active' ? 'selected' : ''; ?>>Active</option>
+                                <option value="active" <?php echo $status === 'active' ? 'selected' : ''; ?>>Verified</option>
                                 <option value="inactive" <?php echo $status === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
                             </select>
                         </div>

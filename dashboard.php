@@ -2,6 +2,9 @@
 // Sertakan file konfigurasi
 require_once 'config.php';
 
+// Set timezone to Jakarta (WIB/GMT+7)
+date_default_timezone_set('Asia/Jakarta');
+
 // Pastikan user sudah login
 requireLogin();
 
@@ -1734,6 +1737,11 @@ input:checked + .toggle-slider:before {
                                 <i class="fas fa-heart"></i> Pasangan
                             </a>
                         </li>
+                        <li>
+                            <a href="?page=promotion" class="<?php echo $page === 'promotion' ? 'active' : ''; ?>">
+                                <i class="fas fa-tag"></i> Promosi
+                            </a>
+                        </li>
                     </ul>
                 </div>
 
@@ -3185,8 +3193,8 @@ input:checked + .toggle-slider:before {
                             </div>
                         </div>
                         <?php endif; ?>
-                    
-                   <?php elseif ($page === 'matches'): ?>
+
+<?php elseif ($page === 'matches'): ?>
     <div class="dashboard-header">
         <h2>Pasangan</h2>
         <p>Lihat orang-orang yang cocok dengan Anda berdasarkan menfess mutual.</p>
@@ -3235,6 +3243,173 @@ input:checked + .toggle-slider:before {
                                 </div>
                             </div>
                         </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    /* Matches styling */
+    .matches-container {
+        margin-bottom: 30px;
+    }
+    
+    .matches-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .match-card {
+        background-color: var(--card-bg);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .match-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .match-image {
+        height: 200px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .match-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .match-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: var(--primary);
+        color: white;
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .match-info {
+        padding: 20px;
+    }
+    
+    .match-header {
+        margin-bottom: 10px;
+    }
+    
+    .match-header h3 {
+        font-size: 18px;
+        font-weight: 500;
+        color: var(--text-color);
+    }
+    
+    .match-bio {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 15px;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        height: 60px;
+    }
+    
+    .match-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .empty-matches {
+        text-align: center;
+        padding: 40px 0;
+    }
+    
+    .empty-icon {
+        font-size: 50px;
+        color: var(--secondary);
+        margin-bottom: 20px;
+    }
+    
+    .empty-matches h3 {
+        font-size: 20px;
+        margin-bottom: 10px;
+        color: var(--text-color);
+    }
+    
+    .empty-matches p {
+        color: #666;
+        margin-bottom: 20px;
+    }
+    
+    @media (max-width: 767px) {
+        .match-actions {
+            flex-direction: column;
+        }
+    }
+    </style>
+<?php endif; ?>
+
+<?php if ($page === 'promotion'): ?>
+    <div class="dashboard-header">
+        <h2>Promosi</h2>
+        <p>Promosikan produk anda disini</p>
+    </div>
+    
+    <!-- <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-heart"></i> Promosi </h3>
+        </div>
+        <div class="matches-container">
+            <p>Orang-orang yang saling tertarik dengan Anda</p> -->
+            
+            <div class="matches-grid">
+                <?php if (empty($matches)): ?>
+                    <div class="empty-matches">
+                        <div class="empty-icon">
+                            <i class="fa fa-gear"></i>
+                        </div>
+                        <h3>Upss fitur ini masih dalam tahap pengembangan</h3>
+                        <!-- <p>Kirim menfess ke crush kamu dan tunggu balasannya untuk mulai membuat koneksi!</p>
+                        <a href="?page=menfess" class="btn">Kirim Menfess</a> -->
+                    </div>
+                <!-- <?php else: ?>
+                    <?php foreach ($matches as $match): ?>
+                        <div class="match-card">
+                            <div class="match-image">
+                                <img src="<?php echo !empty($match['profile_pic']) ? htmlspecialchars($match['profile_pic']) : 'assets/images/user_profile.png'; ?>" alt="<?php echo htmlspecialchars($match['name']); ?>">
+                                <div class="match-badge">
+                                    <i class="fas fa-heart"></i> Match!
+                                </div>
+                            </div>
+                            <div class="match-info">
+                                <div class="match-header">
+                                    <h3><?php echo htmlspecialchars($match['name']); ?></h3>
+                                </div>
+                                <div class="match-bio">
+                                    <?php echo isset($match['bio']) ? nl2br(htmlspecialchars(substr($match['bio'], 0, 100) . (strlen($match['bio']) > 100 ? '...' : ''))) : 'Belum ada bio.'; ?>
+                                </div>
+                                <div class="match-actions">
+                                    <a href="view_profile?id=<?php echo $match['id']; ?>" class="btn btn-outline">
+                                        <i class="fas fa-user"></i> Lihat Profil
+                                    </a>
+                                    <a href="start_chat?user_id=<?php echo $match['id']; ?>" class="btn">
+                                        <i class="fas fa-comments"></i> Chat
+                                    </a>
+                                </div>
+                            </div>
+                        </div> -->
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
