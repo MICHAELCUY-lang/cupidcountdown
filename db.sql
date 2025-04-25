@@ -386,7 +386,8 @@ CREATE TABLE IF NOT EXISTS promotion_dismissals (
     user_id INT NOT NULL,
     promotion_id INT NOT NULL,
     dismissed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY (user_id, promotion_id, DATE(dismissed_at)),
+    dismissed_date DATE GENERATED ALWAYS AS (DATE(dismissed_at)) STORED,
+    UNIQUE KEY unique_dismiss_per_day (user_id, promotion_id, dismissed_date),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (promotion_id) REFERENCES promotions(id) ON DELETE CASCADE
 );

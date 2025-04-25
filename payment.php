@@ -56,8 +56,8 @@ if (isset($_GET['order_id'])) {
 
 // Set Midtrans API configurations
 // Ganti dengan konfigurasi Midtrans Anda
-$midtrans_client_key = 'MIDTRANS_CLIENT_KEY';
-$midtrans_server_key = 'MIDTRANS_SERVER_KEY';
+$midtrans_client_key = 'Mid-client-ptNBYAj_Htl9A_Bt';
+$midtrans_server_key = 'Mid-server-Ql9gzKnXv7MEPJvFQCz1NiY_';
 $is_production = false;
 $api_url = $is_production ? 
     'https://app.midtrans.com/snap/v1/transactions' : 
@@ -66,7 +66,7 @@ $api_url = $is_production ?
 // Prepare transaction data for Midtrans
 $transaction_details = [
     'order_id' => $order_id,
-    'gross_amount' => $order_details['amount']
+    'gross_amount' => $order_details['amount']  
 ];
 
 $customer_details = [
