@@ -3688,171 +3688,828 @@ if ($popup_promo) {
     <?php endif; ?>
 
     <?php if ($page === 'promotion'): ?>
-        <div class="dashboard-header">
-            <h2>Promosi</h2>
-            <p>Promosikan produk anda disini</p>
-        </div>
-        
-        <!-- <div class="card">
-            <div class="card-header">
-                <h3><i class="fas fa-heart"></i> Promosi </h3>
-            </div>
-            <div class="matches-container">
-                <p>Orang-orang yang saling tertarik dengan Anda</p> -->
-                
-                <div class="matches-grid">
-                    <?php if (empty($matches)): ?>
-                        <div class="empty-matches">
-                            <div class="empty-icon">
-                                <i class="fa fa-gear"></i>
-                            </div>
-                            <h3>Upss fitur ini masih dalam tahap pengembangan</h3>
-                            <!-- <p>Kirim menfess ke crush kamu dan tunggu balasannya untuk mulai membuat koneksi!</p>
-                            <a href="?page=menfess" class="btn">Kirim Menfess</a> -->
+<div class="dashboard-header">
+    <h2>Promosi</h2>
+    <p>Promosikan produk atau konten Anda ke seluruh pengguna Cupid</p>
+</div>
+
+<?php 
+// Periksa apakah ada pesan yang perlu ditampilkan
+$promo_message = '';
+if (isset($_SESSION['promo_message'])) {
+    $promo_message = $_SESSION['promo_message'];
+    unset($_SESSION['promo_message']);
+}
+
+if (!empty($promo_message)): ?>
+    <div class="alert <?php echo strpos($promo_message, 'success') !== false ? 'alert-success' : 'alert-danger'; ?>">
+        <?php echo $promo_message; ?>
+    </div>
+<?php endif; ?>
+
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-bullhorn"></i> Buat Promosi Baru</h3>
+    </div>
+    <div class="promotion-form-container">
+        <form id="promotionForm" method="post" action="dashboard?page=promotion" enctype="multipart/form-data">
+            <div class="promotion-pricing">
+                <div class="pricing-title">Paket Promosi</div>
+                <div class="pricing-cards">
+                    <div class="pricing-card" data-duration="7">
+                        <div class="pricing-card-header">7 Hari</div>
+                        <div class="pricing-card-price">Rp 5.000</div>
+                        <div class="pricing-card-features">
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Tayang di Dashboard</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Link ke Instagram/Website</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Laporan Performa Dasar</div>
                         </div>
-                    <!-- <?php else: ?>
-                        <?php foreach ($matches as $match): ?>
-                            <div class="match-card">
-                                <div class="match-image">
-                                    <img src="<?php echo !empty($match['profile_pic']) ? htmlspecialchars($match['profile_pic']) : 'assets/images/user_profile.png'; ?>" alt="<?php echo htmlspecialchars($match['name']); ?>">
-                                    <div class="match-badge">
-                                        <i class="fas fa-heart"></i> Match!
-                                    </div>
-                                </div>
-                                <div class="match-info">
-                                    <div class="match-header">
-                                        <h3><?php echo htmlspecialchars($match['name']); ?></h3>
-                                    </div>
-                                    <div class="match-bio">
-                                        <?php echo isset($match['bio']) ? nl2br(htmlspecialchars(substr($match['bio'], 0, 100) . (strlen($match['bio']) > 100 ? '...' : ''))) : 'Belum ada bio.'; ?>
-                                    </div>
-                                    <div class="match-actions">
-                                        <a href="view_profile?id=<?php echo $match['id']; ?>" class="btn btn-outline">
-                                            <i class="fas fa-user"></i> Lihat Profil
-                                        </a>
-                                        <a href="start_chat?user_id=<?php echo $match['id']; ?>" class="btn">
-                                            <i class="fas fa-comments"></i> Chat
-                                        </a>
-                                    </div>
-                                </div>
-                            </div> -->
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                        <div class="pricing-card-select">
+                            <label class="pricing-select-btn">
+                                <input type="radio" name="promo_duration" value="7" checked>
+                                <span>Pilih Paket</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="pricing-card" data-duration="14">
+                        <div class="pricing-card-header">14 Hari</div>
+                        <div class="pricing-card-price">Rp 9.000</div>
+                        <div class="pricing-card-features">
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Tayang di Dashboard</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Link ke Instagram/Website</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Laporan Performa Lengkap</div>
+                        </div>
+                        <div class="pricing-card-select">
+                            <label class="pricing-select-btn">
+                                <input type="radio" name="promo_duration" value="14">
+                                <span>Pilih Paket</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="pricing-card popular" data-duration="30">
+                        <div class="pricing-card-badge">Terpopuler</div>
+                        <div class="pricing-card-header">30 Hari</div>
+                        <div class="pricing-card-price">Rp 17.000</div>
+                        <div class="pricing-card-features">
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Tayang di Dashboard</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Link ke Instagram/Website</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Laporan Performa Lengkap</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Prioritas Tayang</div>
+                        </div>
+                        <div class="pricing-card-select">
+                            <label class="pricing-select-btn">
+                                <input type="radio" name="promo_duration" value="30">
+                                <span>Pilih Paket</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="promo_title">Judul Promosi</label>
+                <input type="text" id="promo_title" name="promo_title" class="form-control" placeholder="Masukkan judul promosi Anda" required maxlength="50">
+                <div class="form-hint">Maksimal 50 karakter</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="promo_description">Deskripsi</label>
+                <textarea id="promo_description" name="promo_description" class="form-control" rows="3" placeholder="Jelaskan produk/konten Anda secara singkat" required maxlength="200"></textarea>
+                <div class="character-counter"><span id="desc-count">0</span>/200</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="promo_image">Gambar Promosi</label>
+                <div class="promo-image-preview-container">
+                    <div id="image-preview" class="promo-image-preview">
+                        <i class="fas fa-image"></i>
+                        <span>Pratinjau Gambar</span>
+                    </div>
+                    <div class="promo-image-upload">
+                        <div class="file-upload">
+                            <input type="text" class="form-control" readonly placeholder="Pilih file gambar..." id="file-name">
+                            <label for="promo_image" class="file-upload-btn">Browse</label>
+                        </div>
+                        <input type="file" id="promo_image" name="promo_image" accept="image/*" required style="display: none;">
+                        <div class="form-hint">Format gambar: JPG, PNG, GIF. Ukuran ideal 800x600 piksel. Maksimal 2MB.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="promo_link">Link Tujuan</label>
+                <input type="url" id="promo_link" name="promo_link" class="form-control" placeholder="https://instagram.com/username_anda" required>
+                <div class="form-hint">Link ke Instagram, website, atau toko online Anda</div>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="submit" name="create_promotion" class="btn btn-lg">
+                    <i class="fas fa-paper-plane"></i> Buat Promosi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php
+// Get active promotions for current user
+$active_promos_sql = "SELECT * FROM promotions WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC";
+$active_promos_stmt = $conn->prepare($active_promos_sql);
+$active_promos_stmt->bind_param("i", $user_id);
+$active_promos_stmt->execute();
+$active_promos_result = $active_promos_stmt->get_result();
+$active_promos = [];
+while ($row = $active_promos_result->fetch_assoc()) {
+    $active_promos[] = $row;
+}
+
+// Get pending promotions for current user
+$pending_promos_sql = "SELECT * FROM promotions WHERE user_id = ? AND status = 'pending' ORDER BY created_at DESC";
+$pending_promos_stmt = $conn->prepare($pending_promos_sql);
+$pending_promos_stmt->bind_param("i", $user_id);
+$pending_promos_stmt->execute();
+$pending_promos_result = $pending_promos_stmt->get_result();
+$pending_promos = [];
+while ($row = $pending_promos_result->fetch_assoc()) {
+    $pending_promos[] = $row;
+}
+
+// Get promotion history
+$promo_history_sql = "SELECT * FROM promotions WHERE user_id = ? AND (status = 'expired' OR status = 'cancelled') ORDER BY created_at DESC LIMIT 10";
+$promo_history_stmt = $conn->prepare($promo_history_sql);
+$promo_history_stmt->bind_param("i", $user_id);
+$promo_history_stmt->execute();
+$promo_history_result = $promo_history_stmt->get_result();
+$promo_history = [];
+while ($row = $promo_history_result->fetch_assoc()) {
+    $promo_history[] = $row;
+}
+?>
+
+<!-- Active Promotions -->
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-bullhorn"></i> Promosi Aktif</h3>
+    </div>
+    
+    <?php if (empty($active_promos)): ?>
+    <div class="empty-state">
+        <i class="fas fa-ad"></i>
+        <h3>Belum Ada Promosi Aktif</h3>
+        <p>Buat promosi baru untuk mempromosikan produk atau konten Anda.</p>
+    </div>
+    <?php else: ?>
+    <div class="promotion-items">
+        <?php foreach ($active_promos as $promo): ?>
+        <div class="promotion-item">
+            <div class="promotion-image">
+                <img src="<?php echo htmlspecialchars($promo['image_url']); ?>" alt="<?php echo htmlspecialchars($promo['title']); ?>">
+            </div>
+            <div class="promotion-info">
+                <h4><?php echo htmlspecialchars($promo['title']); ?></h4>
+                <p><?php echo htmlspecialchars($promo['description']); ?></p>
+                <div class="promotion-meta">
+                    <span class="promotion-duration">
+                        <i class="fas fa-clock"></i> 
+                        <?php 
+                            $date1 = new DateTime(date('Y-m-d H:i:s'));
+                            $date2 = new DateTime($promo['expiry_date']);
+                            $interval = $date1->diff($date2);
+                            echo $interval->format('%a hari tersisa');
+                        ?>
+                    </span>
+                    <span class="promotion-views">
+                        <i class="fas fa-eye"></i> <?php echo number_format($promo['impressions'] ?? 0); ?> tayangan
+                    </span>
+                    <span class="promotion-clicks">
+                        <i class="fas fa-mouse-pointer"></i> <?php echo number_format($promo['clicks'] ?? 0); ?> klik
+                    </span>
+                </div>
+                <div class="promotion-actions">
+                    <a href="<?php echo htmlspecialchars($promo['target_url']); ?>" class="btn btn-outline btn-sm" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Lihat Link
+                    </a>
+                    <a href="promotion_stats?id=<?php echo $promo['id']; ?>" class="btn btn-outline btn-sm">
+                        <i class="fas fa-chart-bar"></i> Statistik
+                    </a>
+                    <form method="post" action="cancel_promotion" class="d-inline" onsubmit="return confirm('Yakin ingin membatalkan promosi ini?');">
+                        <input type="hidden" name="promo_id" value="<?php echo $promo['id']; ?>">
+                        <button type="submit" class="btn btn-outline btn-sm text-danger">
+                            <i class="fas fa-times"></i> Batalkan
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
-
-        <style>
-        /* Matches styling */
-        .matches-container {
-            margin-bottom: 30px;
-        }
-        
-        .matches-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        
-        .match-card {
-            background-color: var(--card-bg);
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: var(--card-shadow);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .match-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-        }
-        
-        .match-image {
-            height: 200px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .match-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .match-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: var(--primary);
-            color: white;
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .match-info {
-            padding: 20px;
-        }
-        
-        .match-header {
-            margin-bottom: 10px;
-        }
-        
-        .match-header h3 {
-            font-size: 18px;
-            font-weight: 500;
-            color: var(--text-color);
-        }
-        
-        .match-bio {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 15px;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            height: 60px;
-        }
-        
-        .match-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .empty-matches {
-            text-align: center;
-            padding: 40px 0;
-        }
-        
-        .empty-icon {
-            font-size: 50px;
-            color: var(--secondary);
-            margin-bottom: 20px;
-        }
-        
-        .empty-matches h3 {
-            font-size: 20px;
-            margin-bottom: 10px;
-            color: var(--text-color);
-        }
-        
-        .empty-matches p {
-            color: #666;
-            margin-bottom: 20px;
-        }
-        
-        @media (max-width: 767px) {
-            .match-actions {
-                flex-direction: column;
-            }
-        }
-        </style>
+        <?php endforeach; ?>
+    </div>
     <?php endif; ?>
+</div>
+
+<!-- Pending Promotions -->
+<?php if (!empty($pending_promos)): ?>
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-hourglass-half"></i> Menunggu Pembayaran</h3>
+    </div>
+    
+    <div class="promotion-items">
+        <?php foreach ($pending_promos as $promo): ?>
+        <div class="promotion-item pending">
+            <div class="promotion-image">
+                <img src="<?php echo htmlspecialchars($promo['image_url']); ?>" alt="<?php echo htmlspecialchars($promo['title']); ?>">
+                <div class="promotion-status">Menunggu Pembayaran</div>
+            </div>
+            <div class="promotion-info">
+                <h4><?php echo htmlspecialchars($promo['title']); ?></h4>
+                <p><?php echo htmlspecialchars($promo['description']); ?></p>
+                <div class="promotion-meta">
+                    <span class="promotion-price">
+                        <i class="fas fa-tag"></i> Rp <?php echo number_format($promo['price']); ?>
+                    </span>
+                    <span class="promotion-duration">
+                        <i class="fas fa-calendar-alt"></i> <?php echo $promo['duration_days']; ?> hari
+                    </span>
+                    <span class="promotion-date">
+                        <i class="fas fa-clock"></i> Dibuat: <?php echo date('d M Y H:i', strtotime($promo['created_at'])); ?>
+                    </span>
+                </div>
+                <div class="promotion-actions">
+                    <a href="payment?order_id=<?php echo htmlspecialchars($promo['order_id']); ?>" class="btn btn-sm">
+                        <i class="fas fa-credit-card"></i> Lanjutkan Pembayaran
+                    </a>
+                    <form method="post" action="cancel_promotion" class="d-inline" onsubmit="return confirm('Yakin ingin membatalkan promosi ini?');">
+                        <input type="hidden" name="promo_id" value="<?php echo $promo['id']; ?>">
+                        <button type="submit" class="btn btn-outline btn-sm text-danger">
+                            <i class="fas fa-times"></i> Batalkan
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Promotion History -->
+<?php if (!empty($promo_history)): ?>
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-history"></i> Riwayat Promosi</h3>
+    </div>
+    
+    <div class="promotion-table-container">
+        <table class="promotion-table">
+            <thead>
+                <tr>
+                    <th>Judul</th>
+                    <th>Tanggal</th>
+                    <th>Durasi</th>
+                    <th>Harga</th>
+                    <th>Status</th>
+                    <th>Tayangan</th>
+                    <th>Klik</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($promo_history as $promo): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($promo['title']); ?></td>
+                    <td><?php echo date('d M Y', strtotime($promo['created_at'])); ?></td>
+                    <td><?php echo $promo['duration_days']; ?> hari</td>
+                    <td>Rp <?php echo number_format($promo['price']); ?></td>
+                    <td>
+                        <span class="status-badge status-<?php echo strtolower($promo['status']); ?>">
+                            <?php 
+                            switch($promo['status']) {
+                                case 'expired':
+                                    echo 'Berakhir';
+                                    break;
+                                case 'cancelled':
+                                    echo 'Dibatalkan';
+                                    break;
+                                default:
+                                    echo ucfirst($promo['status']);
+                            }
+                            ?>
+                        </span>
+                    </td>
+                    <td><?php echo number_format($promo['impressions'] ?? 0); ?></td>
+                    <td><?php echo number_format($promo['clicks'] ?? 0); ?></td>
+                    <td>
+                        <a href="promotion_stats?id=<?php echo $promo['id']; ?>" class="btn btn-outline btn-xs">
+                            <i class="fas fa-chart-bar"></i> Stats
+                        </a>
+                        <?php if ($promo['status'] === 'expired' || $promo['status'] === 'cancelled'): ?>
+                        <a href="renew_promotion?id=<?php echo $promo['id']; ?>" class="btn btn-xs">
+                            <i class="fas fa-redo"></i> Perpanjang
+                        </a>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
+
+<style>
+/* Promotion Form Styling */
+.promotion-form-container {
+    padding: 20px;
+}
+
+.promotion-pricing {
+    margin-bottom: 30px;
+}
+
+.pricing-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--text-color);
+}
+
+.pricing-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.pricing-card {
+    background-color: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.pricing-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.pricing-card.popular {
+    border-color: var(--primary);
+    box-shadow: 0 5px 15px rgba(255, 75, 110, 0.1);
+}
+
+.pricing-card-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: var(--primary);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 20px;
+}
+
+.pricing-card-header {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--text-color);
+}
+
+.pricing-card-price {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 20px;
+}
+
+.pricing-card-features {
+    margin-bottom: 20px;
+}
+
+.pricing-feature {
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.pricing-feature i {
+    color: var(--primary);
+    margin-right: 5px;
+}
+
+.pricing-select-btn {
+    display: block;
+    padding: 10px;
+    background-color: var(--secondary);
+    color: var(--primary);
+    border-radius: 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.pricing-select-btn:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+.pricing-card input[type="radio"] {
+    display: none;
+}
+
+.pricing-card input[type="radio"]:checked + span {
+    background-color: var(--primary);
+    color: white;
+    display: block;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.pricing-card.selected {
+    border-color: var(--primary);
+    background-color: rgba(255, 75, 110, 0.05);
+}
+
+/* Image Preview Styling */
+.promo-image-preview-container {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.promo-image-preview {
+    width: 250px;
+    height: 200px;
+    border: 2px dashed var(--border-color);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.promo-image-preview i {
+    font-size: 40px;
+    color: var(--border-color);
+    margin-bottom: 10px;
+}
+
+.promo-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.promo-image-upload {
+    flex: 1;
+}
+
+.character-counter {
+    text-align: right;
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.form-buttons {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Active Promotions Styling */
+.promotion-items {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+}
+
+.promotion-item {
+    display: flex;
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.promotion-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.promotion-item.pending {
+    border-left: 4px solid #ffc107;
+}
+
+.promotion-image {
+    width: 200px;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+.promotion-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.promotion-status {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    background-color: #ffc107;
+    color: #000;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+}
+
+.promotion-info {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.promotion-info h4 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-color);
+}
+
+.promotion-info p {
+    color: #666;
+    margin-bottom: 15px;
+    flex-grow: 1;
+}
+
+.promotion-meta {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.promotion-meta span {
+    font-size: 13px;
+    color: #666;
+    display: flex;
+    align-items: center;
+}
+
+.promotion-meta i {
+    margin-right: 5px;
+    color: var(--primary);
+}
+
+.promotion-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Promotion Table Styling */
+.promotion-table-container {
+    overflow-x: auto;
+    padding: 10px 20px 20px;
+}
+
+.promotion-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.promotion-table th,
+.promotion-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.promotion-table th {
+    background-color: var(--secondary);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.promotion-table tbody tr {
+    transition: background-color 0.3s;
+}
+
+.promotion-table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-expired {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+.status-cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.btn-xs {
+    padding: 3px 8px;
+    font-size: 12px;
+}
+
+/* Empty State Styling */
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+}
+
+.empty-state i {
+    font-size: 60px;
+    color: var(--secondary);
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-color);
+}
+
+.empty-state p {
+    color: #666;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .promo-image-preview-container {
+        flex-direction: column;
+    }
+    
+    .promo-image-preview {
+        width: 100%;
+        height: 250px;
+    }
+    
+    .promotion-item {
+        flex-direction: column;
+    }
+    
+    .promotion-image {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .pricing-cards {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Pricing card selection
+    const pricingCards = document.querySelectorAll('.pricing-card');
+    
+    pricingCards.forEach(card => {
+        card.addEventListener('click', function() {
+            pricingCards.forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            // Check the radio button
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+        });
+        
+        // Check if card is already selected
+        const radio = card.querySelector('input[type="radio"]');
+        if (radio.checked) {
+            card.classList.add('selected');
+        }
+    });
+    
+    // Character counter for description
+    const descriptionTextarea = document.getElementById('promo_description');
+    const descCount = document.getElementById('desc-count');
+    
+    if (descriptionTextarea && descCount) {
+        descriptionTextarea.addEventListener('input', function() {
+            const count = this.value.length;
+            descCount.textContent = count;
+            
+            if (count > 180) {
+                descCount.style.color = '#dc3545';
+            } else if (count > 150) {
+                descCount.style.color = '#ffc107';
+            } else {
+                descCount.style.color = '#666';
+            }
+        });
+    }
+    
+    // Image preview
+    const imageInput = document.getElementById('promo_image');
+    const imagePreview = document.getElementById('image-preview');
+    const fileNameDisplay = document.getElementById('file-name');
+    
+    if (imageInput && imagePreview) {
+        imageInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                const fileSize = file.size / 1024 / 1024; // Convert to MB
+                
+                if (fileSize > 2) {
+                    alert('Ukuran gambar terlalu besar. Maksimal 2MB.');
+                    this.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    if (fileNameDisplay) {
+                        fileNameDisplay.value = file.name;
+                    }
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Form validation
+    const promotionForm = document.getElementById('promotionForm');
+    
+    if (promotionForm) {
+        promotionForm.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // Title validation
+            const title = document.getElementById('promo_title').value.trim();
+            if (title.length < 5) {
+                alert('Judul promosi terlalu pendek. Minimal 5 karakter.');
+                isValid = false;
+            }
+            
+            // Description validation
+            const description = document.getElementById('promo_description').value.trim();
+            if (description.length < 20) {
+                alert('Deskripsi terlalu pendek. Minimal 20 karakter.');
+                isValid = false;
+            }
+            
+            // Link validation
+            const link = document.getElementById('promo_link').value.trim();
+            if (!link.startsWith('http://') && !link.startsWith('https://')) {
+                alert('Link harus dimulai dengan http:// atau https://');
+                isValid = false;
+            }
+            
+            // Image validation
+            const image = document.getElementById('promo_image');
+            if (image.files.length === 0) {
+                alert('Silakan pilih gambar untuk promosi Anda.');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+    }
+});
+</script>
+ <?php endif; ?>
+</div>
     </section>
     <div id="toast-notification" class="toast-notification">
         <div class="toast-icon">
@@ -3863,6 +4520,243 @@ if ($popup_promo) {
             <i class="fas fa-times"></i>
         </div>
     </div>
+
+    <!-- promosi -->
+
+    $popup_promo_sql = "SELECT p.*, u.name as user_name 
+                    FROM promotions p 
+                    JOIN users u ON p.user_id = u.id 
+                    WHERE p.status = 'active' 
+                    AND p.id NOT IN (
+                        SELECT promotion_id FROM promotion_dismissals 
+                        WHERE user_id = ? AND DATE(dismissed_at) = CURDATE()
+                    ) 
+                    ORDER BY RAND() LIMIT 1";
+$popup_promo_stmt = $conn->prepare($popup_promo_sql);
+$popup_promo_stmt->bind_param("i", $user_id);
+$popup_promo_stmt->execute();
+$popup_promo_result = $popup_promo_stmt->get_result();
+$popup_promo = $popup_promo_result->fetch_assoc();
+
+// Update impressions counter if we found a promotion to display
+if ($popup_promo) {
+    $update_impression_sql = "UPDATE promotions SET impressions = impressions + 1 WHERE id = ?";
+    $update_impression_stmt = $conn->prepare($update_impression_sql);
+    $update_impression_stmt->bind_param("i", $popup_promo['id']);
+    $update_impression_stmt->execute();
+}
+?>
+
+<!-- Promotion Popup HTML -->
+<?php if ($popup_promo): ?>
+<div id="promotion-popup" class="promotion-popup">
+    <div class="promotion-popup-content">
+        <button class="promotion-popup-close" id="close-promotion" data-promo-id="<?php echo $popup_promo['id']; ?>">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="promotion-popup-image">
+            <img src="<?php echo htmlspecialchars($popup_promo['image_url']); ?>" alt="<?php echo htmlspecialchars($popup_promo['title']); ?>">
+            <div class="promotion-popup-badge">Promosi</div>
+        </div>
+        <div class="promotion-popup-info">
+            <h3><?php echo htmlspecialchars($popup_promo['title']); ?></h3>
+            <p><?php echo htmlspecialchars($popup_promo['description']); ?></p>
+            <div class="promotion-popup-meta">
+                <span class="promotion-popup-author">
+                    <i class="fas fa-user"></i> <?php echo htmlspecialchars($popup_promo['user_name']); ?>
+                </span>
+            </div>
+            <a href="<?php echo htmlspecialchars($popup_promo['target_url']); ?>" class="btn btn-block promotion-popup-btn" target="_blank" data-promo-id="<?php echo $popup_promo['id']; ?>">
+                <i class="fas fa-external-link-alt"></i> Kunjungi Link
+            </a>
+            <div class="promotion-popup-footer">
+                <a href="dashboard?page=promotion" class="promotion-popup-link">Buat promosi sendiri?</a>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- CSS for Promotion Popup -->
+<style>
+/* Promotion Popup Styling */
+.promotion-popup {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    width: 350px;
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    transform: translateY(100%);
+    opacity: 0;
+    animation: slideIn 0.5s ease forwards;
+    animation-delay: 2s;
+}
+
+@keyframes slideIn {
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.promotion-popup-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.promotion-popup-close:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.promotion-popup-image {
+    height: 180px;
+    position: relative;
+    overflow: hidden;
+}
+
+.promotion-popup-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+}
+
+.promotion-popup:hover .promotion-popup-image img {
+    transform: scale(1.05);
+}
+
+.promotion-popup-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: var(--primary);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 20px;
+}
+
+.promotion-popup-info {
+    padding: 20px;
+}
+
+.promotion-popup-info h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-color);
+}
+
+.promotion-popup-info p {
+    color: #666;
+    margin-bottom: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.promotion-popup-meta {
+    margin-bottom: 15px;
+    font-size: 13px;
+    color: #666;
+}
+
+.promotion-popup-meta i {
+    color: var(--primary);
+    margin-right: 5px;
+}
+
+.promotion-popup-btn {
+    margin-bottom: 10px;
+}
+
+.promotion-popup-footer {
+    text-align: center;
+    font-size: 13px;
+}
+
+.promotion-popup-link {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.promotion-popup-link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .promotion-popup {
+        width: calc(100% - 40px);
+    }
+}
+</style>
+
+<!-- JavaScript for Promotion Popup -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const promotionPopup = document.getElementById('promotion-popup');
+    const closePromotion = document.getElementById('close-promotion');
+    
+    if (closePromotion) {
+        closePromotion.addEventListener('click', function() {
+            const promoId = this.getAttribute('data-promo-id');
+            
+            // Hide popup
+            promotionPopup.style.animation = 'none';
+            promotionPopup.style.transform = 'translateY(100%)';
+            promotionPopup.style.opacity = '0';
+            
+            // Record dismissal in database
+            fetch('dismiss_promotion.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'promo_id=' + promoId
+            });
+            
+            // Remove from DOM after animation
+            setTimeout(() => {
+                promotionPopup.remove();
+            }, 500);
+        });
+    }
+    
+    // Track clicks on promotion link
+    const promoLink = document.querySelector('.promotion-popup-btn');
+    if (promoLink) {
+        promoLink.addEventListener('click', function() {
+            const promoId = this.getAttribute('data-promo-id');
+            
+            // Record click in database
+            fetch('record_promotion_click.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'promo_id=' + promoId
+            });
+        });
+    }
+});
+</script>
         <script>
             // JavaScript untuk interaktivitas
             document.addEventListener('DOMContentLoaded', function() {
