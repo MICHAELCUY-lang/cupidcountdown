@@ -3,6 +3,9 @@
 require_once 'config.php';
 require_once 'admin_functions.php';
 
+// Set timezone to Jakarta (WIB/GMT+7)
+date_default_timezone_set('Asia/Jakarta');
+
 // Make sure user is logged in and is admin
 requireLogin();
 requireAdmin();
@@ -53,17 +56,6 @@ while ($row = $activity_result->fetch_assoc()) {
     $activities[] = $row;
 }
 
-// Get user's payments
-$payments_sql = "SELECT * FROM profile_reveal_payments WHERE user_id = ? ORDER BY created_at DESC";
-$payments_stmt = $conn->prepare($payments_sql);
-$payments_stmt->bind_param("i", $user_id);
-$payments_stmt->execute();
-$payments_result = $payments_stmt->get_result();
-
-$payments = [];
-while ($row = $payments_result->fetch_assoc()) {
-    $payments[] = $row;
-}
 ?>
 
 <!DOCTYPE html>

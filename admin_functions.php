@@ -76,7 +76,7 @@ function getAdminDashboardStats($conn) {
     $result = $conn->query($new_users_sql);
     $new_users_today = $result->fetch_assoc()['count'];
     
-    // Recent activity
+    // Recent activity (without payment-related entries)
     $activity_sql = "SELECT a.*, u.name as user_name FROM (
                     SELECT id AS user_id, 'Created Account' as action, created_at FROM users
                     UNION ALL
@@ -85,6 +85,7 @@ function getAdminDashboardStats($conn) {
                     JOIN users u ON a.user_id = u.id
                     ORDER BY a.created_at DESC
                     LIMIT 10";
+    
     $result = $conn->query($activity_sql);
     $recent_activity = [];
     while ($row = $result->fetch_assoc()) {
