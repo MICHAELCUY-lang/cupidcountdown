@@ -76,19 +76,11 @@ function getAdminDashboardStats($conn) {
     $result = $conn->query($new_users_sql);
     $new_users_today = $result->fetch_assoc()['count'];
     
-    // Total revenue
-    $revenue_sql = "SELECT SUM(amount) as total FROM profile_reveal_payments 
-                   WHERE status = 'completed'";
-    $result = $conn->query($revenue_sql);
-    $total_revenue = $result->fetch_assoc()['total'] ?? 0;
-    
     // Recent activity
     $activity_sql = "SELECT a.*, u.name as user_name FROM (
                     SELECT id AS user_id, 'Created Account' as action, created_at FROM users
                     UNION ALL
                     SELECT sender_id AS user_id, 'Sent Message' as action, created_at FROM chat_messages
-                    UNION ALL
-                    SELECT user_id, 'Made Payment' as action, created_at FROM profile_reveal_payments
                     ) as a
                     JOIN users u ON a.user_id = u.id
                     ORDER BY a.created_at DESC
@@ -103,7 +95,6 @@ function getAdminDashboardStats($conn) {
         'total_users' => $total_users,
         'active_users' => $active_users,
         'new_users_today' => $new_users_today,
-        'total_revenue' => $total_revenue,
         'recent_activity' => $recent_activity
     ];
 }

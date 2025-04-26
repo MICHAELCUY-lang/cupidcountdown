@@ -97,11 +97,6 @@ $stats = getAdminDashboardStats($conn);
         </div>
     </div>
 </div>
-
-                    <div class="stat-card">
-                        <div class="stat-value"><?php echo 'Rp ' . number_format($stats['total_revenue'], 0, ',', '.'); ?></div>
-                        <div class="stat-label">Total Revenue</div>
-                    </div>
                 </div>
                 
                 <!-- Recent Activity -->
