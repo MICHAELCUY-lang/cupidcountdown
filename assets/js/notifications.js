@@ -57,7 +57,7 @@ function initNotifications() {
     
     // Mark all as read
     if (markAllReadBtn) {
-        markAllReadBtn.addEventListener('click', function() { 
+        markAllReadBtn.addEventListener('click', function() {
             fetch('notification_api', {
                 method: 'POST',
                 headers: {

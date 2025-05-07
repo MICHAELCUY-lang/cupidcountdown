@@ -2,6 +2,9 @@
 // Start session
 session_start();
 
+// Set timezone to Jakarta (WIB/GMT+7)
+date_default_timezone_set('Asia/Jakarta');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: cupid.php');

@@ -7,13 +7,13 @@ date_default_timezone_set('Asia/Jakarta');
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
-    header('Location: cupid.php');
+    header('Location: cupid');
     exit();
 }
 
 // Check if session_id is provided
 if (!isset($_GET['session_id'])) {
-    header('Location: dashboard.php?page=chat');
+    header('Location: dashboard?page=chat');
     exit();
 }
 
@@ -32,6 +32,8 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+
+$conn->query("SET time_zone = '+07:00'");
 
 // Get user data
 $user_id = $_SESSION['user_id'];
@@ -60,7 +62,7 @@ $session_stmt->execute();
 $session_result = $session_stmt->get_result();
 
 if ($session_result->num_rows === 0) {
-    header('Location: dashboard.php?page=chat');
+    header('Location: dashboard?page=chat');
     exit();
 }
 
@@ -86,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_message'])) {
             notifyNewMessage($conn, $partner_id, $user_id, $message, $session_id);
             
             // Successfully sent, refresh the page to display new message
-            header("Location: chat.php?session_id=" . $session_id);
+            header("Location: chat?session_id=" . $session_id);
             exit();
         } else {
             $error_message = "Error sending message: " . $conn->error;
@@ -623,7 +625,7 @@ function isMessageDeleted($conn, $message_id) {
     <header>
         <div class="container">
             <div class="header-content">
-                <a href="cupid.php" class="logo">
+                <a href="cupid" class="logo">
                     <i class="fas fa-heart"></i> Cupid
                 </a>
                 <nav>
@@ -663,9 +665,9 @@ function isMessageDeleted($conn, $message_id) {
                                 </div>
                             </div>
                         </li>
-                        <li><a href="dashboard.php">Dashboard</a></li>
+                        <li><a href="dashboard">Dashboard</a></li>
                         <li>
-                            <a href="dashboard.php?page=chat" class="btn btn-outline">Kembali ke Chat</a>
+                            <a href="dashboard?page=chat" class="btn btn-outline">Kembali ke Chat</a>
                         </li>
                     </ul>
                 </nav>
@@ -679,7 +681,7 @@ function isMessageDeleted($conn, $message_id) {
             <!-- Chat Header -->
             <div class="chat-header">
                 <div class="chat-avatar">
-                    <a href="<?php echo 'view_profile.php?id=' . $partner_id; ?>" title="Lihat profil">
+                    <a href="<?php echo 'view_profile?id=' . $partner_id; ?>" title="Lihat profil">
                         <img src="<?php echo !empty($chat_session['profile_pic']) ? htmlspecialchars($chat_session['profile_pic']) : 'assets/images/user_profile.png'; ?>" alt="<?php echo htmlspecialchars($chat_session['partner_name']); ?>">
                     </a>
                 </div>
@@ -690,7 +692,7 @@ function isMessageDeleted($conn, $message_id) {
                 </div>
                 <div class="chat-actions">
                     <!-- View profile button - Direct link to profile -->
-                    <a href="view_profile.php?id=<?php echo $partner_id; ?>" class="btn btn-sm" title="Lihat Profil">
+                    <a href="view_profile?id=<?php echo $partner_id; ?>" class="btn btn-sm" title="Lihat Profil">
                         <i class="fas fa-user"></i> Profil
                     </a>
                     
@@ -817,7 +819,7 @@ function isMessageDeleted($conn, $message_id) {
                 formData.append('message_id', messageId);
                 
                 // Send delete request
-                fetch('delete_message.php', {
+                fetch('delete_message', {
                     method: 'POST',
                     body: formData
                 })
@@ -865,7 +867,7 @@ function isMessageDeleted($conn, $message_id) {
             formData.append('delete_type', deleteType);
             
             // Send delete request
-            fetch('delete_chat.php', {
+            fetch('delete_chat', {
                 method: 'POST',
                 body: formData
             })
@@ -875,7 +877,7 @@ function isMessageDeleted($conn, $message_id) {
                     showToast('Chat berhasil dihapus');
                     // Redirect to dashboard after 1 second
                     setTimeout(function() {
-                        window.location.href = 'dashboard.php?page=chat';
+                        window.location.href = 'dashboard?page=chat';
                     }, 1000);
                 } else {
                     showToast('Gagal menghapus chat: ' + data.message);
@@ -938,7 +940,7 @@ function isMessageDeleted($conn, $message_id) {
             const markAllRead = document.getElementById('mark-all-read');
             if (markAllRead) {
                 markAllRead.addEventListener('click', function() {
-                    fetch('notification_api.php?action=mark_all_read')
+                    fetch('notification_api?action=mark_all_read')
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
@@ -955,7 +957,7 @@ function isMessageDeleted($conn, $message_id) {
             if (clearAllBtn) {
                 clearAllBtn.addEventListener('click', function() {
                     if (confirm('Are you sure you want to clear all notifications?')) {
-                        fetch('notification_api.php?action=clear_all')
+                        fetch('notification_api?action=clear_all')
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success) {
@@ -975,7 +977,7 @@ function isMessageDeleted($conn, $message_id) {
                 if (notificationsList) {
                     notificationsList.innerHTML = '<div class="notification-loading">Loading notifications...</div>';
                     
-                    fetch('notification_api.php?action=get_notifications')
+                    fetch('notification_api?action=get_notifications')
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
@@ -1027,7 +1029,7 @@ function isMessageDeleted($conn, $message_id) {
             
             // Mark a notification as read
             function markAsRead(notificationId) {
-                fetch(`notification_api.php?action=mark_read&id=${notificationId}`)
+                fetch(`notification_api?action=mark_read&id=${notificationId}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
@@ -1100,7 +1102,7 @@ function isMessageDeleted($conn, $message_id) {
             
             // Check for new notifications periodically
             function checkForNewNotifications() {
-                fetch('notification_api.php?action=get_unread_count')
+                fetch('notification_api?action=get_unread_count')
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {

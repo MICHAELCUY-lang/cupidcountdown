@@ -879,7 +879,7 @@
             <div class="header-content">
                 <a href="#" class="logo">
                     <img src="assets/images/cupid_nobg.png" alt="Cupid Logo">
-                    <span class="logo-text">Cupid</span>
+                    <!--<span class="logo-text">Cupid</span>-->
                 </a>
                 <nav id="nav">
                     <button id="close-menu" class="close-menu">&times;</button>
@@ -974,7 +974,7 @@
             </div>
             <div class="stats-container">
                 <div class="stat-card">
-                    <div class="stat-number">100</div>
+                    <div class="stat-number">150+</div>
                     <div class="stat-text">Pengguna Aktif</div>
                 </div>
                 <!--<div class="stat-card">-->
@@ -1012,8 +1012,8 @@
             <div class="footer-content">
                 <div class="footer-about">
                     <div class="footer-logo">
-                        <img src="/api/placeholder/160/60" alt="Cupid Logo">
-                        <span class="footer-logo-text">Cupid</span>
+                        <img src="assets/images/cupid_nobg.png" alt="Cupid Logo">
+                        <!--<span class="footer-logo-text">Cupid</span>-->
                     </div>
                     <p>Platform untuk menemukan pasangan yang cocok berdasarkan minat, hobi, dan tujuan yang sama. Temukan teman, partner belajar, atau romansa di Cupid.</p>
                     <div class="social-links">

@@ -1,5 +1,5 @@
 <?php
-// File: forgot_password.php
+// File: forgot_password
 // Halaman dan proses lupa password
 
 // Start session
@@ -9,7 +9,7 @@ require_once 'config.php';
 
 // Cek jika user sudah login
 if (isset($_SESSION['user_id'])) {
-    header('Location: dashboard.php');
+    header('Location: dashboard');
     exit();
 }
 
@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_reset'])) {
                 $subject = "Reset Password Cupid";
                 
                 // URL untuk reset password
-                $reset_url = "https://" . $_SERVER['HTTP_HOST'] . "/forgot_password.php?token=" . $reset_token;
+                $reset_url = "https://" . $_SERVER['HTTP_HOST'] . "/forgot_password?token=" . $reset_token;
                 
                 $message = "
                 <html>
@@ -366,7 +366,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_reset'])) {
 <body>
     <div class="container">
         <div class="logo-container">
-            <a href="cupid.php" class="logo">
+            <a href="cupid" class="logo">
                 <i class="fas fa-heart"></i> Cupid
             </a>
         </div>
@@ -388,7 +388,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_reset'])) {
             </div>
             
             <div class="extra-links" style="margin-top: 30px;">
-                <a href="login.php" class="btn">Kembali ke Login</a>
+                <a href="login" class="btn">Kembali ke Login</a>
             </div>
             
             <?php elseif ($show_reset_form): ?>
@@ -405,7 +405,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_reset'])) {
                 </ul>
             </div>
             
-            <form method="post" action="forgot_password.php">
+            <form method="post" action="forgot_password">
                 <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
                 
                 <div class="form-group">
@@ -421,7 +421,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_reset'])) {
                 <button type="submit" name="reset_password" class="btn">Reset Password</button>
                 
                 <div class="extra-links">
-                    <p>Ingat password? <a href="login.php">Login</a></p>
+                    <p>Ingat password? <a href="login">Login</a></p>
                 </div>
             </form>
             
@@ -431,7 +431,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_reset'])) {
                 Masukkan email yang Anda gunakan saat mendaftar untuk menerima link reset password.
             </div>
             
-            <form method="post" action="forgot_password.php">
+            <form method="post" action="forgot_password">
                 <div class="form-group">
                     <label for="email">Email</label>
                     <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($email); ?>" placeholder="email@student.president.ac.id" required>
@@ -441,8 +441,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_reset'])) {
                 <button type="submit" name="request_reset" class="btn">Kirim Link Reset</button>
                 
                 <div class="extra-links">
-                    <p>Ingat password? <a href="login.php">Login</a></p>
-                    <p>Belum punya akun? <a href="register.php">Daftar</a></p>
+                    <p>Ingat password? <a href="login">Login</a></p>
+                    <p>Belum punya akun? <a href="register">Daftar</a></p>
                 </div>
             </form>
             <?php endif; ?>

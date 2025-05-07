@@ -1,0 +1,209 @@
+<!-- 
+    How to implement the notification system in your Cupid website
+    
+    This file contains the HTML structure and instructions to add to your existing files
+-->
+
+<!-- 1. Add this to your header.php or equivalent file (inside nav ul) -->
+<li class="notification-container">
+    <div id="notification-button" class="notification-bell">
+        <i class="fas fa-bell"></i>
+        <span id="notification-badge" class="notification-badge" style="display: none;">0</span>
+    </div>
+    <div id="notification-panel" class="notification-panel">
+        <div class="notification-header">
+            <h3>Notifications</h3>
+            <div class="notification-actions">
+                <span id="mark-all-read" class="notification-clear">Mark all as read</span>
+                <span id="clear-all-notifications" class="notification-clear">Clear all</span>
+            </div>
+        </div>
+        <div id="notifications-list" class="notification-list">
+            <div class="empty-notifications">No notifications yet</div>
+        </div>
+        <div class="notification-settings">
+            <h4>Settings</h4>
+            <div class="setting-item">
+                <span class="setting-label">Notification Sound</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="notification-sound-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span class="setting-label">Browser Notifications</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="browser-notifications-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+</li>
+
+<!-- 2. Create a toast notification container at the bottom of your body -->
+<div id="toast-notification" class="toast-notification">
+    <div class="toast-icon">
+        <i class="fas fa-bell"></i>
+    </div>
+    <div id="toast-message" class="toast-message"></div>
+    <div class="toast-close">
+        <i class="fas fa-times"></i>
+    </div>
+</div>
+
+<!-- 3. Add notification sound element -->
+<audio id="notification-sound" src="assets/sounds/notification.mp3" style="display: none;"></audio>
+
+<!-- 4. Implementation Instructions -->
+<!--
+    Follow these steps to implement the notification system:
+
+    1. Create Database Tables:
+       - Run the SQL in notifications.php to create the necessary tables
+       - This should happen automatically when you include the file
+    
+    2. Add CSS and JavaScript:
+       - Add notification-styles.css to your stylesheet or include it separately
+       - Add notifications.js to your JavaScript files
+    
+    3. Add HTML Components:
+       - Add the notification bell and panel HTML to your header
+       - Add the toast notification component to the bottom of your body
+       - Add the notification sound element
+    
+    4. Add Notification Triggers:
+       - Update your chat.php to create notifications when messages are sent
+       - Update your menfess.php to create notifications for likes and matches
+       - Make sure to include notifications.php in these files
+    
+    5. Test the System:
+       - Send messages between users
+       - Like menfess posts
+       - Create matches
+       - Check that notifications appear correctly
+-->
+
+<!-- 5. Example settings page section for notification preferences -->
+<div class="card">
+    <div class="card-header">
+        <h3>Notification Settings</h3>
+    </div>
+    <div class="card-body">
+        <form id="notification-settings-form">
+            <div class="form-group">
+                <label class="form-label">Email Notifications</label>
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <span class="setting-label">New Messages</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="email_messages" id="email-messages" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Likes on Menfess</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="email_likes" id="email-likes" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">New Matches</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="email_matches" id="email-matches" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Website Notifications</label>
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <span class="setting-label">Browser Notifications</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="browser_notifications" id="browser-notifications" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Notification Sound</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="sound_enabled" id="sound-enabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <button type="button" id="test-sound" class="btn-sm">Test</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="submit" class="btn">Save Settings</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 6. JavaScript for settings page -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load current settings
+        fetch('notification_api.php?action=get_settings')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const settings = data.settings;
+                    
+                    // Update form checkboxes
+                    document.getElementById('email-messages').checked = settings.email_messages == 1;
+                    document.getElementById('email-likes').checked = settings.email_likes == 1;
+                    document.getElementById('email-matches').checked = settings.email_matches == 1;
+                    document.getElementById('browser-notifications').checked = settings.browser_notifications == 1;
+                    document.getElementById('sound-enabled').checked = settings.sound_enabled == 1;
+                }
+            })
+            .catch(error => console.error('Error loading notification settings:', error));
+        
+        // Test sound button
+        document.getElementById('test-sound').addEventListener('click', function() {
+            const sound = document.getElementById('notification-sound');
+            if (sound) {
+                sound.play();
+            }
+        });
+        
+        // Save settings
+        document.getElementById('notification-settings-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            formData.append('action', 'update_settings');
+            
+            // Convert checkboxes to 0/1
+            ['email_messages', 'email_likes', 'email_matches', 'browser_notifications', 'sound_enabled'].forEach(setting => {
+                const checkbox = document.querySelector(`[name="${setting}"]`);
+                formData.set(setting, checkbox.checked ? 1 : 0);
+            });
+            
+            fetch('notification_api.php', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        alert('Notification settings saved successfully');
+                    } else {
+                        alert('Failed to save notification settings');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving notification settings:', error);
+                    alert('An error occurred while saving notification settings');
+                });
+        });
+    });
+</script>

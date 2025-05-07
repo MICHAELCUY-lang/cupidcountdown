@@ -1,5 +1,5 @@
 <?php
-// File: register.php
+// File: register
 // Halaman dan proses pendaftaran
 
 // Start session
@@ -9,7 +9,7 @@ require_once 'config.php';
 
 // Cek jika user sudah login
 if (isset($_SESSION['user_id'])) {
-    header('Location: dashboard.php');
+    header('Location: dashboard');
     exit();
 }
 
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = $stmt->get_result();
         
         if ($result->num_rows > 0) {
-            $error = 'Email sudah terdaftar. Silakan <a href="login.php">login</a>.';
+            $error = 'Email sudah terdaftar. Silakan <a href="login">login</a>.';
         } else {
             // Hash password
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $subject = "Verifikasi Email Cupid";
                 
                 // URL untuk verifikasi (sesuaikan dengan domain Anda)
-                $verification_url = "https://" . $_SERVER['HTTP_HOST'] . "/verify.php?token=" . $verification_token;
+                $verification_url = "https://" . $_SERVER['HTTP_HOST'] . "/verify?token=" . $verification_token;
                 
                 $message = "
                 <html>
@@ -319,7 +319,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="container">
         <div class="logo-container">
-            <a href="cupid.php" class="logo">
+            <a href="cupid" class="logo">
                 <i class="fas fa-heart"></i> Cupid
             </a>
         </div>
@@ -340,7 +340,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php echo $success; ?>
             </div>
             <div class="extra-links" style="margin-bottom: 20px;">
-                <p>Silakan <a href="login.php">login</a> setelah memverifikasi email Anda.</p>
+                <p>Silakan <a href="login">login</a> setelah memverifikasi email Anda.</p>
             </div>
             <?php else: ?>
             
@@ -353,7 +353,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </ul>
             </div>
             
-            <form method="post" action="register.php">
+            <form method="post" action="register">
                 <div class="form-group">
                     <label for="name">Nama Lengkap</label>
                     <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($name); ?>" required>
@@ -381,7 +381,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit" class="btn">Daftar</button>
                 
                 <div class="extra-links">
-                    <p>Sudah punya akun? <a href="login.php">Masuk</a></p>
+                    <p>Sudah punya akun? <a href="login">Masuk</a></p>
                 </div>
             </form>
             <?php endif; ?>

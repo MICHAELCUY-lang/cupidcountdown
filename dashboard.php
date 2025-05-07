@@ -2050,389 +2050,1885 @@
                                 </div>
                                 
                                 <?php if (!$profile_complete): ?>
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3>Lengkapi Profil Anda</h3>
+                                <div class="card profile-completion-card">
+                                    <div class="profile-completion-content">
+                                        <div class="profile-completion-info">
+                                            <div class="completion-icon">
+                                                <i class="fas fa-user-edit"></i>
+                                            </div>
+                                            <div class="completion-text">
+                                                <h3>Lengkapi Profil Anda</h3>
+                                                <p>Lengkapi profil Anda untuk meningkatkan peluang menemukan pasangan yang cocok!</p>
+                                                <div class="profile-progress-container">
+                                                    <div class="profile-progress-bar">
+                                                        <div class="profile-progress-fill" style="width: <?php echo $completion_percentage ?? 25; ?>%"></div>
+                                                    </div>
+                                                    <span class="profile-progress-text"><?php echo $completion_percentage ?? 25; ?>% Lengkap</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <a href="?page=profile" class="btn btn-lg">
+                                            <i class="fas fa-arrow-right"></i> Lengkapi Profil
+                                        </a>
                                     </div>
-                                    <p>Lengkapi profil Anda untuk meningkatkan peluang menemukan pasangan yang cocok!</p>
-                                    <a href="?page=profile" class="btn" style="margin-top: 15px;">Lengkapi Profil</a>
                                 </div>
                                 <?php endif; ?>
                                 
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3>Aktivitas Terbaru</h3>
-                                    </div>
-                                    <div class="recent-activity">
-                                        <?php if (empty($menfess_messages) && empty($chat_sessions)): ?>
-                                            <p>Belum ada aktivitas baru.</p>
-                                        <?php else: ?>
-                                            <ul style="list-style: none; padding: 0;">
-                                                <?php 
-                                                $count = 0;
-                                                foreach ($menfess_messages as $message) {
-                                                    if ($count >= 3) break;
-                                                    $type = $message['type'] === 'sent' ? 'mengirim' : 'menerima';
-                                                    echo '<li style="padding: 10px 0; border-bottom: 1px solid #eee;">';
-                                                    echo '<i class="fas fa-mask" style="margin-right: 10px; color: var(--primary);"></i>';
-                                                    echo 'Anda ' . $type . ' pesan menfess. ';
-                                                    echo '<span style="color: #999; font-size: 12px;">' . date('d M Y H:i', strtotime($message['created_at'])) . '</span>';
-                                                    echo '</li>';
-                                                    $count++;
-                                                }
-                                                
-                                                foreach ($chat_sessions as $session) {
-                                                    if ($count >= 3) break;
-                                                    echo '<li style="padding: 10px 0; border-bottom: 1px solid #eee;">';
-                                                    echo '<i class="fas fa-comments" style="margin-right: 10px; color: var(--primary);"></i>';
-                                                    
-                                                    // Check if blind chat and if permission exists
-                                                    $has_permission = false;
-                                                    if ($session['is_blind']) {
-                                                        $partner_id = $session['partner_id'];
-                                                        $permission_sql = "SELECT * FROM profile_view_permissions 
-                                                                        WHERE user_id = ? AND target_user_id = ?";
-                                                        $permission_stmt = $conn->prepare($permission_sql);
-                                                        $permission_stmt->bind_param("ii", $user_id, $partner_id);
-                                                        $permission_stmt->execute();
-                                                        $permission_result = $permission_stmt->get_result();
-                                                        $has_permission = ($permission_result->num_rows > 0);
-                                                        
-                                                        if (!$has_permission) {
-                                                            echo 'Chat dengan Anonymous User';
-                                                        } else {
-                                                            echo 'Chat dengan ' . htmlspecialchars($session['partner_name']);
-                                                        }
-                                                    } else {
-                                                        echo 'Chat dengan ' . htmlspecialchars($session['partner_name']);
-                                                    }
-                                                    
-                                                    if ($session['is_blind']) {
-                                                        echo ' (Blind Chat)';
-                                                    }
-                                                    echo ' <span style="color: #999; font-size: 12px;">' . 
-                                                        (isset($session['last_message_time']) && !empty($session['last_message_time']) 
-                                                        ? date('d M Y H:i', strtotime($session['last_message_time'])) 
-                                                        : 'Belum ada pesan') . 
-                                                        '</span>';
-                                                    echo '</li>';
-                                                    $count++;
-                                                }
-                                                ?>
-                                            </ul>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                                
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3>Fitur Utama</h3>
-                                    </div>
-                                    <div class="features-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top:20px;">
-                                        <div class="feature-box" style="text-align: center; padding: 20px; background-color: var(--bg-color); border-radius: 10px;">
-                                            <i class="fas fa-mask" style="font-size: 40px; color: var(--primary); margin-bottom: 15px;"></i>
-                                            <h4>Anonymous Crush Menfess</h4>
-                                            <p style="margin-bottom: 15px;">Kirim pesan anonim ke crush kamu!</p>
-                                            <a href="?page=menfess" class="btn btn-outline">Kirim Menfess</a>
+                                <!-- Stats Cards Row -->
+                                <div class="stats-container">
+                                    <div class="stat-card">
+                                        <div class="stat-icon">
+                                            <i class="fas fa-mask"></i>
                                         </div>
-                                        <div class="feature-box" style="text-align: center; padding: 20px; background-color: var(--bg-color); border-radius: 10px;">
-                                            <i class="fas fa-comments" style="font-size: 40px; color: var(--primary); margin-bottom: 15px;"></i>
-                                            <h4>Blind Chat</h4>
-                                            <p style="margin-bottom: 15px;">Chat dengan mahasiswa acak!</p>
-                                            <a href="?page=chat" class="btn btn-outline">Mulai Chat</a>
+                                        <div class="stat-info">
+                                            <h3><?php echo count($menfess_messages ?? []); ?></h3>
+                                            <p>Total Menfess</p>
                                         </div>
-                                        <div class="feature-box" style="text-align: center; padding: 20px; background-color: var(--bg-color); border-radius: 10px;">
-                                            <i class="fas fa-clipboard-check" style="font-size: 40px; color: var(--primary); margin-bottom: 15px;"></i>
-                                            <h4>Compatibility Test</h4>
-                                            <p style="margin-bottom: 15px;">Temukan kecocokan berdasarkan kepribadian!</p>
-                                            <a href="?page=compatibility" class="btn btn-outline">Ikuti Tes</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            
-                            <?php elseif ($page === 'profile'): ?>
-                                <div class="dashboard-header">
-                                    <h2>Profil</h2>
-                                    <p>Kelola informasi profil Anda untuk meningkatkan peluang menemukan pasangan yang cocok.</p>
-                                </div>
-                                
-                                <?php if (!empty($profile_message)): ?>
-                                <div class="alert <?php echo strpos($profile_message, 'success') !== false ? 'alert-success' : 'alert-danger'; ?>">
-                                    <i class="<?php echo strpos($profile_message, 'success') !== false ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'; ?>"></i>
-                                    <?php echo $profile_message; ?>
-                                </div>
-                                <?php endif; ?>
-                                
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3>Informasi Profil</h3>
                                     </div>
                                     
-                                    <div class="profile-header">
-                                        <div class="profile-pic">
-                                            <img src="<?php echo !empty($profile['profile_pic']) ? htmlspecialchars($profile['profile_pic']) : 'assets/images/user_profile.png'; ?>" alt="Profile Picture">
-                                            <label for="profile_pic" class="edit-pic-button">
-                                                <i class="fas fa-camera"></i>
-                                            </label>
+                                    <div class="stat-card">
+                                        <div class="stat-icon">
+                                            <i class="fas fa-heart"></i>
                                         </div>
-                                        <div class="profile-info">
-                                            <h3><?php echo htmlspecialchars($user['name']); ?></h3>
-                                            <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($user['email']); ?></p>
-                                            <?php if(!empty($profile['major'])): ?>
-                                            <p><i class="fas fa-graduation-cap"></i> <?php echo htmlspecialchars($profile['major']); ?></p>
+                                        <div class="stat-info">
+                                            <h3><?php echo count($matches ?? []); ?></h3>
+                                            <p>Match Saat Ini</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="stat-card">
+                                        <div class="stat-icon">
+                                            <i class="fas fa-comments"></i>
+                                        </div>
+                                        <div class="stat-info">
+                                            <h3><?php echo count($chat_sessions ?? []); ?></h3>
+                                            <p>Chat Aktif</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="stat-card">
+                                        <div class="stat-icon">
+                                            <i class="fas fa-percentage"></i>
+                                        </div>
+                                        <div class="stat-info">
+                                            <h3><?php echo isset($test_results['personality_score']) ? round($test_results['personality_score']) : 0; ?></h3>
+                                            <p>Skor Kompatibilitas</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Activities and Features in Grid Layout -->
+                                <div class="dashboard-grid">
+                                    <!-- Recent Activity Card -->
+                                    <div class="card dashboard-card activity-card">
+                                        <div class="card-header">
+                                            <h3><i class="fas fa-history"></i> Aktivitas Terbaru</h3>
+                                            <a href="#" class="card-action">Lihat Semua</a>
+                                        </div>
+                                        <div class="recent-activity">
+                                            <?php if (empty($menfess_messages) && empty($chat_sessions)): ?>
+                                                <div class="empty-state-mini">
+                                                    <i class="fas fa-wind"></i>
+                                                    <p>Belum ada aktivitas baru.</p>
+                                                </div>
+                                            <?php else: ?>
+                                                <div class="activity-list">
+                                                    <?php 
+                                                    $count = 0;
+                                                    foreach ($menfess_messages as $message) {
+                                                        if ($count >= 3) break;
+                                                        $type = $message['type'] === 'sent' ? 'mengirim' : 'menerima';
+                                                        $icon_class = $message['type'] === 'sent' ? 'paper-plane' : 'mask';
+                                                        $icon_color = $message['type'] === 'sent' ? 'var(--accent)' : 'var(--primary)';
+                                                    ?>
+                                                    <div class="activity-item">
+                                                        <div class="activity-icon" style="background-color: <?php echo $icon_color; ?>20;">
+                                                            <i class="fas fa-<?php echo $icon_class; ?>" style="color: <?php echo $icon_color; ?>;"></i>
+                                                        </div>
+                                                        <div class="activity-content">
+                                                            <div class="activity-title">Anda <?php echo $type; ?> pesan menfess</div>
+                                                            <div class="activity-time"><?php echo date('d M Y, H:i', strtotime($message['created_at'])); ?></div>
+                                                        </div>
+                                                    </div>
+                                                    <?php 
+                                                        $count++;
+                                                    }
+                                                    
+                                                    foreach ($chat_sessions as $session) {
+                                                        if ($count >= 3) break;
+                                                        // Check if blind chat and if permission exists
+                                                        $has_permission = false;
+                                                        $partner_name = "Anonymous User";
+                                                        
+                                                        if ($session['is_blind']) {
+                                                            $partner_id = $session['partner_id'];
+                                                            $permission_sql = "SELECT * FROM profile_view_permissions 
+                                                                            WHERE user_id = ? AND target_user_id = ?";
+                                                            $permission_stmt = $conn->prepare($permission_sql);
+                                                            $permission_stmt->bind_param("ii", $user_id, $partner_id);
+                                                            $permission_stmt->execute();
+                                                            $permission_result = $permission_stmt->get_result();
+                                                            $has_permission = ($permission_result->num_rows > 0);
+                                                            
+                                                            if ($has_permission) {
+                                                                $partner_name = htmlspecialchars($session['partner_name']);
+                                                            }
+                                                        } else {
+                                                            $partner_name = htmlspecialchars($session['partner_name']);
+                                                        }
+                                                    ?>
+                                                    <div class="activity-item">
+                                                        <div class="activity-icon" style="background-color: var(--accent)20;">
+                                                            <i class="fas fa-comments" style="color: var(--accent);"></i>
+                                                        </div>
+                                                        <div class="activity-content">
+                                                            <div class="activity-title">
+                                                                Chat dengan <?php echo $partner_name; ?>
+                                                                <?php if ($session['is_blind'] && !$has_permission): ?>
+                                                                <span class="blind-badge"><i class="fas fa-eye-slash"></i></span>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                            <div class="activity-time">
+                                                                <?php echo isset($session['last_message_time']) && !empty($session['last_message_time']) 
+                                                                    ? date('d M Y, H:i', strtotime($session['last_message_time'])) 
+                                                                    : 'Belum ada pesan'; ?>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <?php 
+                                                        $count++;
+                                                    }
+                                                    ?>
+                                                </div>
                                             <?php endif; ?>
                                         </div>
                                     </div>
                                     
-                                    <div class="profile-completion">
-                                        <?php
-                                        // Calculate profile completion percentage
-                                        $total_fields = 5; // Name, email, bio, interests, major
-                                        $filled_fields = 2; // Name and email are always filled
-                                        
-                                        if (!empty($profile)) {
-                                            if (!empty($profile['bio'])) $filled_fields++;
-                                            if (!empty($profile['interests'])) $filled_fields++;
-                                            if (!empty($profile['major'])) $filled_fields++;
-                                        }
-                                        
-                                        $completion_percentage = round(($filled_fields / $total_fields) * 100);
-                                        ?>
-                                        <div class="completion-text">
-                                            <span>Kelengkapan Profil</span>
-                                            <span><?php echo $completion_percentage; ?>%</span>
+                                    <!-- Quick Actions Card -->
+                                    <div class="card dashboard-card actions-card">
+                                        <div class="card-header">
+                                            <h3><i class="fas fa-bolt"></i> Aksi Cepat</h3>
                                         </div>
-                                        <div class="completion-bar">
-                                            <div class="completion-progress" style="width: <?php echo $completion_percentage; ?>%;"></div>
+                                        <div class="quick-actions">
+                                            <a href="?page=menfess" class="quick-action-btn">
+                                                <div class="quick-action-icon">
+                                                    <i class="fas fa-mask"></i>
+                                                </div>
+                                                <span>Kirim Menfess</span>
+                                            </a>
+                                            <a href="?page=chat" class="quick-action-btn">
+                                                <div class="quick-action-icon">
+                                                    <i class="fas fa-comments"></i>
+                                                </div>
+                                                <span>Mulai Chat</span>
+                                            </a>
+                                            <a href="?page=compatibility" class="quick-action-btn">
+                                                <div class="quick-action-icon">
+                                                    <i class="fas fa-clipboard-check"></i>
+                                                </div>
+                                                <span>Tes Kecocokan</span>
+                                            </a>
+                                            <a href="?page=matches" class="quick-action-btn">
+                                                <div class="quick-action-icon">
+                                                    <i class="fas fa-heart"></i>
+                                                </div>
+                                                <span>Lihat Match</span>
+                                            </a>
                                         </div>
                                     </div>
-                                    
-                                    <div class="profile-tabs">
-                                        <div class="profile-tab active" data-tab="basic">Informasi Dasar</div>
-                                        <div class="profile-tab" data-tab="details">Detail Diri</div>
-                                        <div class="profile-tab" data-tab="privacy">Privasi</div>
-                                    </div>
-                                    
-                                    <form method="post" enctype="multipart/form-data">
-                                        <!-- Basic Information Tab -->
-                                        <div class="tab-content active" id="basic-tab">
-                                            <div class="form-group">
-                                                <label for="name">Nama Lengkap</label>
-                                                <input type="text" id="name" name="name" class="form-control" value="<?php echo htmlspecialchars($user['name']); ?>">
-                                            </div>
-                                            
-                                            <div class="form-group">
-                                                <label for="email">Email</label>
-                                                <input type="email" id="email" name="email" class="form-control" value="<?php echo htmlspecialchars($user['email']); ?>" readonly>
-                                                <div class="help-text">Email tidak dapat diubah karena digunakan untuk verifikasi.</div>
-                                            </div>
-                                            
-                                            <div class="form-group">
-                                                <label for="major">Jurusan</label>
-                                                <select id="major" name="major" class="form-control">
-                                                    <option value="">-- Pilih Jurusan --</option>
-                                                    <option value="Computer Science" <?php echo ($profile && $profile['major'] === 'Computer Science') ? 'selected' : ''; ?>>Computer Science</option>
-                                                    <option value="Business" <?php echo ($profile && $profile['major'] === 'Business') ? 'selected' : ''; ?>>Business</option>
-                                                    <option value="Law" <?php echo ($profile && $profile['major'] === 'Law') ? 'selected' : ''; ?>>Law</option>
-                                                    <option value="Medicine" <?php echo ($profile && $profile['major'] === 'Medicine') ? 'selected' : ''; ?>>Medicine</option>
-                                                    <option value="Engineering" <?php echo ($profile && $profile['major'] === 'Engineering') ? 'selected' : ''; ?>>Engineering</option>
-                                                    <option value="Graphic Design" <?php echo ($profile && $profile['major'] === 'Graphic Design') ? 'selected' : ''; ?>>Graphic Design</option>
-                                                    <option value="Psychology" <?php echo ($profile && $profile['major'] === 'Psychology') ? 'selected' : ''; ?>>Psychology</option>
-                                                    <option value="Communication" <?php echo ($profile && $profile['major'] === 'Communication') ? 'selected' : ''; ?>>Communication</option>
-                                                </select>
-                                            </div>
-                                            
-                                            <div class="form-group">
-                                                <label for="profile_pic">Foto Profil</label>
-                                                <div class="file-upload">
-                                                    <input type="text" class="form-control" readonly placeholder="Pilih file foto..." id="file-name">
-                                                    <label for="profile_pic" class="file-upload-btn">Browse</label>
-                                                </div>
-                                                <input type="file" id="profile_pic" name="profile_pic" style="display: none;">
-                                                <div class="help-text">Format yang didukung: JPG, PNG, GIF. Maksimal 2MB.</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Details Tab -->
-                                        <div class="tab-content" id="details-tab">
-                                            <div class="form-group">
-                                                <label for="bio">Bio</label>
-                                                <textarea id="bio" name="bio" class="form-control" rows="5" placeholder="Ceritakan tentang dirimu..."><?php echo $profile ? htmlspecialchars($profile['bio']) : ''; ?></textarea>
-                                                <div class="help-text">Maksimal 500 karakter. Ceritakan tentang hobi, kesukaan, dan hal menarik tentang dirimu.</div>
-                                            </div>
-                                            
-                                            <div class="form-group">
-                                                <label for="interests">Minat & Hobi</label>
-                                                <textarea id="interests" name="interests" class="form-control" rows="3" placeholder="Masukkan minat dan hobi (pisahkan dengan koma)"><?php echo $profile ? htmlspecialchars($profile['interests']) : ''; ?></textarea>
-                                                <div class="help-text">Contoh: Musik, Film, Fotografi, Hiking, Coding</div>
-                                            </div>
-                                            
-                                            <div class="form-group">
-                                                <label>Minat yang Ditambahkan</label>
-                                                <div class="interests-container" id="interests-display">
-                                                    <?php 
-                                                    if ($profile && !empty($profile['interests'])) {
-                                                        $interests_array = explode(',', $profile['interests']);
-                                                        foreach ($interests_array as $interest) {
-                                                            $interest = trim($interest);
-                                                            if (!empty($interest)) {
-                                                                echo '<span class="interest-tag">' . htmlspecialchars($interest) . ' <i class="fas fa-times"></i></span>';
-                                                            }
-                                                        }
-                                                    } else {
-                                                        echo '<span class="text-muted">Belum ada minat yang ditambahkan</span>';
-                                                    }
-                                                    ?>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="form-group">
-                                                <label for="looking_for">Mencari</label>
-                                                <select id="looking_for" name="looking_for" class="form-control">
-                                                    <option value="friends" <?php echo ($profile && $profile['looking_for'] === 'friends') ? 'selected' : ''; ?>>Teman</option>
-                                                    <option value="study_partner" <?php echo ($profile && $profile['looking_for'] === 'study_partner') ? 'selected' : ''; ?>>Partner Belajar</option>
-                                                    <option value="romance" <?php echo ($profile && $profile['looking_for'] === 'romance') ? 'selected' : ''; ?>>Romansa</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Privacy Tab -->
-                                        <div class="tab-content" id="privacy-tab">
-                                            <div class="privacy-option">
-                                                <h4>
-                                                    Tampilkan Profil Dalam Pencarian
-                                                    <label class="toggle">
-                                                        <input type="checkbox" name="searchable" value="1" <?php echo ($profile && isset($profile['searchable']) && $profile['searchable'] == 1) ? 'checked' : ''; ?>>
-                                                        <span class="toggle-slider"></span>
-                                                    </label>
-                                                </h4>
-                                                <p>Izinkan pengguna lain menemukan profil Anda dalam hasil pencarian dan rekomendasi kecocokan.</p>
-                                            </div>
-                                            
-                                            <div class="privacy-option">
-                                                <h4>
-                                                    Tampilkan Status Online
-                                                    <label class="toggle">
-                                                        <input type="checkbox" name="show_online" <?php echo ($profile && isset($profile['show_online']) && $profile['show_online'] == 1) ? 'checked' : ''; ?>>
-                                                        <span class="toggle-slider"></span>
-                                                    </label>
-                                                </h4>
-                                                <p>Tampilkan status online Anda kepada pengguna lain.</p>
-                                            </div>
-                                            
-                                            <div class="privacy-option">
-                                                <h4>
-                                                    Terima Pesan dari Siapa Saja
-                                                    <label class="toggle">
-                                                        <input type="checkbox" name="allow_messages" <?php echo ($profile && isset($profile['allow_messages']) && $profile['allow_messages'] == 1) ? 'checked' : ''; ?>>
-                                                        <span class="toggle-slider"></span>
-                                                    </label>
-                                                </h4>
-                                                <p>Izinkan pesan dari pengguna yang belum terhubung dengan Anda.</p>
-                                            </div>
-                                            
-                                            <div class="privacy-option">
-                                                <h4>
-                                                    Tampilkan Jurusan
-                                                    <label class="toggle">
-                                                        <input type="checkbox" name="show_major" <?php echo ($profile && isset($profile['show_major']) && $profile['show_major'] == 1) ? 'checked' : ''; ?>>
-                                                        <span class="toggle-slider"></span>
-                                                    </label>
-                                                </h4>
-                                                <p>Tampilkan informasi jurusan Anda kepada pengguna lain.</p>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="submit-wrapper">
-                                            <button type="submit" name="update_profile" class="btn">
-                                                <i class="fas fa-save"></i> Simpan Profil
-                                            </button>
-                                        </div>
-                                    </form>
                                 </div>
-                                <script>
-                // Handle tab switching
-                document.querySelectorAll('.profile-tab').forEach(tab => {
-                    tab.addEventListener('click', function() {
-                        // Update active tab
-                        document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-                        this.classList.add('active');
-                        
-                        // Show corresponding content
-                        const tabName = this.getAttribute('data-tab');
-                        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                        document.getElementById(tabName + '-tab').classList.add('active');
-                    });
+                                
+                                <!-- Feature Highlights -->
+                                <div class="card feature-showcase-card">
+                                    <div class="card-header">
+                                        <h3><i class="fas fa-star"></i> Fitur Utama</h3>
+                                    </div>
+                                    <div class="feature-showcase">
+                                        <div class="feature-item">
+                                            <div class="feature-icon">
+                                                <i class="fas fa-mask"></i>
+                                            </div>
+                                            <div class="feature-content">
+                                                <h4>Anonymous Crush Menfess</h4>
+                                                <p>Kirim pesan anonim ke crush kamu! Identitas kamu akan terungkap hanya jika kalian saling menyukai.</p>
+                                                <a href="?page=menfess" class="btn btn-outline">Kirim Menfess</a>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="feature-item">
+                                            <div class="feature-icon">
+                                                <i class="fas fa-comments"></i>
+                                            </div>
+                                            <div class="feature-content">
+                                                <h4>Blind Chat</h4>
+                                                <p>Chat dengan mahasiswa acak tanpa mengetahui identitas mereka. Temukan koneksi yang mengejutkan!</p>
+                                                <a href="?page=chat" class="btn btn-outline">Mulai Chat</a>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="feature-item">
+                                            <div class="feature-icon">
+                                                <i class="fas fa-clipboard-check"></i>
+                                            </div>
+                                            <div class="feature-content">
+                                                <h4>Compatibility Test</h4>
+                                                <p>Temukan kecocokan berdasarkan kepribadian, minat, dan jurusan kamu. Dapatkan rekomendasi match terbaik!</p>
+                                                <a href="?page=compatibility" class="btn btn-outline">Ikuti Tes</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <style>
+                                /* Dashboard Redesign Styles */
+                                .dashboard-header {
+                                    margin-bottom: 30px;
+                                }
+                                
+                                .dashboard-header h2 {
+                                    font-size: 32px;
+                                    font-weight: 700;
+                                    margin-bottom: 10px;
+                                    color: var(--text-color);
+                                }
+                                
+                                .dashboard-header p {
+                                    font-size: 18px;
+                                    color: var(--text-color);
+                                    opacity: 0.8;
+                                }
+                                
+                                /* Profile Completion Card */
+                                .profile-completion-card {
+                                    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+                                    color: white;
+                                    margin-bottom: 30px;
+                                    border: none;
+                                    overflow: hidden;
+                                    position: relative;
+                                }
+                                
+                                .profile-completion-card::before {
+                                    content: '';
+                                    position: absolute;
+                                    top: 0;
+                                    right: 0;
+                                    bottom: 0;
+                                    left: 0;
+                                    background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+                                    opacity: 0.5;
+                                }
+                                
+                                .profile-completion-content {
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    padding: 25px;
+                                    position: relative;
+                                    z-index: 2;
+                                }
+                                
+                                .profile-completion-info {
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 20px;
+                                    flex: 1;
+                                }
+                                
+                                .completion-icon {
+                                    width: 60px;
+                                    height: 60px;
+                                    background: rgba(255, 255, 255, 0.2);
+                                    border-radius: 50%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-size: 24px;
+                                }
+                                
+                                .completion-text h3 {
+                                    font-size: 22px;
+                                    font-weight: 600;
+                                    margin-bottom: 5px;
+                                }
+                                
+                                .completion-text p {
+                                    margin-bottom: 15px;
+                                    opacity: 0.9;
+                                }
+                                
+                                .profile-progress-container {
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 15px;
+                                }
+                                
+                                .profile-progress-bar {
+                                    flex: 1;
+                                    height: 8px;
+                                    background: rgba(255, 255, 255, 0.2);
+                                    border-radius: 4px;
+                                    overflow: hidden;
+                                }
+                                
+                                .profile-progress-fill {
+                                    height: 100%;
+                                    background: white;
+                                    border-radius: 4px;
+                                    transition: width 0.8s ease-in-out;
+                                }
+                                
+                                .profile-progress-text {
+                                    font-size: 14px;
+                                    font-weight: 600;
+                                    white-space: nowrap;
+                                }
+                                
+                                .profile-completion-card .btn {
+                                    background: white;
+                                    color: var(--primary);
+                                    border: none;
+                                    transition: all 0.3s;
+                                    padding: 12px 25px;
+                                    font-weight: 600;
+                                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                                }
+                                
+                                .profile-completion-card .btn:hover {
+                                    transform: translateY(-3px);
+                                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+                                    background: rgba(255, 255, 255, 0.9);
+                                }
+                                
+                                /* Stats Cards */
+                                .stats-container {
+                                    display: grid;
+                                    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                                    gap: 20px;
+                                    margin-bottom: 30px;
+                                }
+                                
+                                .stat-card {
+                                    background-color: var(--card-bg);
+                                    border-radius: 12px;
+                                    padding: 20px;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 15px;
+                                    box-shadow: var(--card-shadow);
+                                    transition: transform 0.3s, box-shadow 0.3s;
+                                }
+                                
+                                .stat-card:hover {
+                                    transform: translateY(-5px);
+                                    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+                                }
+                                
+                                .stat-icon {
+                                    width: 60px;
+                                    height: 60px;
+                                    border-radius: 12px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-size: 24px;
+                                }
+                                
+                                .stat-card:nth-child(1) .stat-icon {
+                                    background-color: rgba(255, 75, 110, 0.1);
+                                    color: var(--primary);
+                                }
+                                
+                                .stat-card:nth-child(2) .stat-icon {
+                                    background-color: rgba(255, 143, 163, 0.1);
+                                    color: var(--accent);
+                                }
+                                
+                                .stat-card:nth-child(3) .stat-icon {
+                                    background-color: rgba(0, 128, 255, 0.1);
+                                    color: #0080ff;
+                                }
+                                
+                                .stat-card:nth-child(4) .stat-icon {
+                                    background-color: rgba(75, 192, 192, 0.1);
+                                    color: #4bc0c0;
+                                }
+                                
+                                .stat-info h3 {
+                                    font-size: 28px;
+                                    font-weight: 700;
+                                    margin-bottom: 5px;
+                                    color: var(--text-color);
+                                }
+                                
+                                .stat-info p {
+                                    color: var(--text-color);
+                                    opacity: 0.7;
+                                    font-size: 14px;
+                                }
+                                
+                                /* Dashboard Grid Layout */
+                                .dashboard-grid {
+                                    display: grid;
+                                    grid-template-columns: 1.5fr 1fr;
+                                    gap: 20px;
+                                    margin-bottom: 30px;
+                                }
+                                
+                                .dashboard-card {
+                                    height: 100%;
+                                }
+                                
+                                .card-header {
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    margin-bottom: 20px;
+                                    padding-bottom: 15px;
+                                    border-bottom: 1px solid var(--border-color);
+                                }
+                                
+                                .card-header h3 {
+                                    font-size: 18px;
+                                    font-weight: 600;
+                                    color: var(--text-color);
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 10px;
+                                }
+                                
+                                .card-header h3 i {
+                                    color: var(--primary);
+                                }
+                                
+                                .card-action {
+                                    color: var(--primary);
+                                    font-size: 14px;
+                                    text-decoration: none;
+                                    font-weight: 500;
+                                }
+                                
+                                .card-action:hover {
+                                    text-decoration: underline;
+                                }
+                                
+                                /* Recent Activity Styling */
+                                .empty-state-mini {
+                                    text-align: center;
+                                    padding: 30px 0;
+                                }
+                                
+                                .empty-state-mini i {
+                                    font-size: 30px;
+                                    color: #ccc;
+                                    margin-bottom: 10px;
+                                }
+                                
+                                .empty-state-mini p {
+                                    color: #888;
+                                }
+                                
+                                .activity-list {
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 15px;
+                                }
+                                
+                                .activity-item {
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 15px;
+                                    padding: 12px 15px;
+                                    background-color: var(--bg-color);
+                                    border-radius: 10px;
+                                    transition: transform 0.2s, box-shadow 0.2s;
+                                }
+                                
+                                .activity-item:hover {
+                                    transform: translateY(-2px);
+                                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+                                }
+                                
+                                .activity-icon {
+                                    width: 40px;
+                                    height: 40px;
+                                    border-radius: 10px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-size: 16px;
+                                }
+                                
+                                .activity-content {
+                                    flex: 1;
+                                }
+                                
+                                .activity-title {
+                                    font-weight: 500;
+                                    color: var(--text-color);
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 8px;
+                                }
+                                
+                                .activity-time {
+                                    font-size: 12px;
+                                    color: #888;
+                                    margin-top: 4px;
+                                }
+                                
+                                .blind-badge {
+                                    background-color: rgba(0, 0, 0, 0.1);
+                                    color: #888;
+                                    font-size: 10px;
+                                    padding: 2px 5px;
+                                    border-radius: 4px;
+                                    margin-left: 5px;
+                                }
+                                
+                                /* Quick Actions Styling */
+                                .quick-actions {
+                                    display: grid;
+                                    grid-template-columns: repeat(2, 1fr);
+                                    gap: 15px;
+                                }
+                                
+                                .quick-action-btn {
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-items: center;
+                                    justify-content: center;
+                                    padding: 20px;
+                                    background-color: var(--bg-color);
+                                    border-radius: 10px;
+                                    text-decoration: none;
+                                    color: var(--text-color);
+                                    transition: all 0.3s ease;
+                                }
+                                
+                                .quick-action-btn:hover {
+                                    transform: translateY(-5px);
+                                    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+                                }
+                                
+                                .quick-action-icon {
+                                    width: 50px;
+                                    height: 50px;
+                                    border-radius: 12px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-size: 20px;
+                                    margin-bottom: 10px;
+                                    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+                                    color: white;
+                                }
+                                
+                                .quick-action-btn:nth-child(2) .quick-action-icon {
+                                    background: linear-gradient(135deg, #0080ff 0%, #00bfff 100%);
+                                }
+                                
+                                .quick-action-btn:nth-child(3) .quick-action-icon {
+                                    background: linear-gradient(135deg, #4bc0c0 0%, #2ecc71 100%);
+                                }
+                                
+                                .quick-action-btn:nth-child(4) .quick-action-icon {
+                                    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+                                }
+                                
+                                .quick-action-btn span {
+                                    font-weight: 500;
+                                    font-size: 14px;
+                                    margin-top: 5px;
+                                }
+                                
+                                /* Feature Showcase Card */
+                                .feature-showcase-card {
+                                    margin-bottom: 30px;
+                                }
+                                
+                                .feature-showcase {
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 20px;
+                                }
+                                
+                                .feature-item {
+                                    display: flex;
+                                    align-items: flex-start;
+                                    gap: 20px;
+                                    padding: 20px;
+                                    background-color: var(--bg-color);
+                                    border-radius: 12px;
+                                    transition: transform 0.3s, box-shadow 0.3s;
+                                }
+                                
+                                .feature-item:hover {
+                                    transform: translateY(-3px);
+                                    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+                                }
+                                
+                                .feature-icon {
+                                    width: 60px;
+                                    height: 60px;
+                                    border-radius: 50%;
+                                    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+                                    color: white;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-size: 24px;
+                                    flex-shrink: 0;
+                                }
+                                
+                                .feature-item:nth-child(2) .feature-icon {
+                                    background: linear-gradient(135deg, #0080ff 0%, #00bfff 100%);
+                                }
+                                
+                                .feature-item:nth-child(3) .feature-icon {
+                                    background: linear-gradient(135deg, #4bc0c0 0%, #2ecc71 100%);
+                                }
+                                
+                                .feature-content {
+                                    flex: 1;
+                                }
+                                
+                                .feature-content h4 {
+                                    font-size: 18px;
+                                    font-weight: 600;
+                                    margin-bottom: 10px;
+                                    color: var(--text-color);
+                                }
+                                
+                                .feature-content p {
+                                    margin-bottom: 15px;
+                                    color: var(--text-color);
+                                    opacity: 0.8;
+                                }
+                                
+                                .feature-content .btn-outline {
+                                    padding: 8px 15px;
+                                    font-size: 14px;
+                                }
+                                
+                                /* Responsive Adjustments */
+                                @media (max-width: 991px) {
+                                    .dashboard-grid {
+                                        grid-template-columns: 1fr;
+                                    }
+                                    
+                                    .profile-completion-content {
+                                        flex-direction: column;
+                                        align-items: flex-start;
+                                        gap: 20px;
+                                    }
+                                    
+                                    .profile-completion-card .btn {
+                                        width: 100%;
+                                    }
+                                }
+                                
+                                @media (max-width: 768px) {
+                                    .stats-container {
+                                        grid-template-columns: repeat(2, 1fr);
+                                    }
+                                    
+                                    .profile-completion-info {
+                                        flex-direction: column;
+                                        align-items: flex-start;
+                                        text-align: left;
+                                    }
+                                    
+                                    .feature-item {
+                                        flex-direction: column;
+                                        align-items: center;
+                                        text-align: center;
+                                    }
+                                }
+                                
+                                @media (max-width: 480px) {
+                                    .stats-container {
+                                        grid-template-columns: 1fr;
+                                    }
+                                    
+                                    .activity-icon {
+                                        width: 35px;
+                                        height: 35px;
+                                        font-size: 14px;
+                                    }
+                                    
+                                    .quick-actions {
+                                        grid-template-columns: 1fr;
+                                    }
+                                    
+                                    .quick-action-btn {
+                                        flex-direction: row;
+                                        gap: 15px;
+                                        justify-content: flex-start;
+                                        padding: 15px;
+                                    }
+                                    
+                                    .quick-action-icon {
+                                        margin-bottom: 0;
+                                        width: 40px;
+                                        height: 40px;
+                                        font-size: 16px;
+                                    }
+                                }
+                                </style>
+                                <?php endif; ?>
+                            
+        <?php if ($page === 'profile'): ?>
+    <div class="dashboard-header">
+        <h2>Profil Saya</h2>
+        <p>Lengkapi profil Anda untuk meningkatkan peluang menemukan koneksi yang bermakna.</p>
+    </div>
+    
+    <?php if (!empty($profile_message)): ?>
+    <div class="alert <?php echo strpos($profile_message, 'success') !== false ? 'alert-success' : 'alert-danger'; ?>">
+        <i class="<?php echo strpos($profile_message, 'success') !== false ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'; ?>"></i>
+        <?php echo $profile_message; ?>
+    </div>
+    <?php endif; ?>
+    
+    <!-- New Profile Hero Section -->
+    <div class="profile-hero-card">
+        <div class="profile-hero-backdrop"></div>
+        <div class="profile-hero-content">
+            <div class="profile-avatar-wrapper">
+                <div class="profile-avatar">
+                    <img src="<?php echo !empty($profile['profile_pic']) ? htmlspecialchars($profile['profile_pic']) : 'assets/images/user_profile.png'; ?>" alt="Profile Picture" id="profile-preview-img">
+                    <label for="profile_pic" class="profile-avatar-edit">
+                        <i class="fas fa-camera"></i>
+                    </label>
+                </div>
+            </div>
+            <div class="profile-hero-info">
+                <h3><?php echo htmlspecialchars($user['name']); ?></h3>
+                <div class="profile-meta">
+                    <div class="profile-meta-item">
+                        <i class="fas fa-envelope"></i>
+                        <span><?php echo htmlspecialchars($user['email']); ?></span>
+                    </div>
+                    <?php if(!empty($profile['major'])): ?>
+                    <div class="profile-meta-item">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span><?php echo htmlspecialchars($profile['major']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Profile Progress -->
+            <div class="profile-progress-container">
+                <?php
+                // Calculate profile completion percentage
+                $total_fields = 5; // Name, email, bio, interests, major
+                $filled_fields = 2; // Name and email are always filled
+                
+                if (!empty($profile)) {
+                    if (!empty($profile['bio'])) $filled_fields++;
+                    if (!empty($profile['interests'])) $filled_fields++;
+                    if (!empty($profile['major'])) $filled_fields++;
+                }
+                
+                $completion_percentage = round(($filled_fields / $total_fields) * 100);
+                ?>
+                <div class="profile-progress-info">
+                    <span>Kelengkapan profil</span>
+                    <span class="profile-progress-percentage"><?php echo $completion_percentage; ?>%</span>
+                </div>
+                <div class="profile-progress-bar">
+                    <div class="profile-progress-fill" style="width: <?php echo $completion_percentage; ?>%;"></div>
+                </div>
+                <div class="profile-progress-tips">
+                    Profil yang lengkap meningkatkan peluang mendapatkan match!
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Profile Edit Form -->
+    <div class="profile-edit-card">
+        <form method="post" enctype="multipart/form-data" id="profile-form">
+            <input type="file" id="profile_pic" name="profile_pic" accept="image/*" style="display: none;">
+            
+            <!-- Modern Clean Tab Navigation -->
+            <div class="profile-tabs-container">
+                <div class="profile-tabs">
+                    <button type="button" class="profile-tab active" data-tab="basic-info">
+                        <i class="fas fa-user"></i>
+                        <span>Informasi Dasar</span>
+                    </button>
+                    <button type="button" class="profile-tab" data-tab="bio-interests">
+                        <i class="fas fa-heart"></i>
+                        <span>Bio & Minat</span>
+                    </button>
+                    <button type="button" class="profile-tab" data-tab="privacy">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Privasi</span>
+                    </button>
+                </div>
+                
+                <div class="tab-save-button">
+                    <button type="submit" name="update_profile" class="btn">
+                        <i class="fas fa-save"></i> Simpan Perubahan
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Tab Contents -->
+            <div class="profile-tab-contents">
+                <!-- Basic Info Tab -->
+                <div class="tab-content active" id="basic-info-content">
+                    <div class="tab-content-inner">
+                        <div class="form-section">
+                            <h4>Informasi Pribadi</h4>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="name">Nama Lengkap</label>
+                                    <input type="text" id="name" name="name" class="form-control" value="<?php echo htmlspecialchars($user['name']); ?>">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" id="email" name="email" class="form-control" value="<?php echo htmlspecialchars($user['email']); ?>" readonly>
+                                    <div class="form-hint">Email tidak dapat diubah karena digunakan untuk verifikasi.</div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="major">Jurusan</label>
+                                <select id="major" name="major" class="form-control">
+                                    <option value="">-- Pilih Jurusan --</option>
+                                    <option value="Computer Science" <?php echo ($profile && $profile['major'] === 'Computer Science') ? 'selected' : ''; ?>>Computer Science</option>
+                                    <option value="Business" <?php echo ($profile && $profile['major'] === 'Business') ? 'selected' : ''; ?>>Business</option>
+                                    <option value="Law" <?php echo ($profile && $profile['major'] === 'Law') ? 'selected' : ''; ?>>Law</option>
+                                    <option value="Medicine" <?php echo ($profile && $profile['major'] === 'Medicine') ? 'selected' : ''; ?>>Medicine</option>
+                                    <option value="Engineering" <?php echo ($profile && $profile['major'] === 'Engineering') ? 'selected' : ''; ?>>Engineering</option>
+                                    <option value="Graphic Design" <?php echo ($profile && $profile['major'] === 'Graphic Design') ? 'selected' : ''; ?>>Graphic Design</option>
+                                    <option value="Psychology" <?php echo ($profile && $profile['major'] === 'Psychology') ? 'selected' : ''; ?>>Psychology</option>
+                                    <option value="Communication" <?php echo ($profile && $profile['major'] === 'Communication') ? 'selected' : ''; ?>>Communication</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="looking_for">Mencari</label>
+                                <select id="looking_for" name="looking_for" class="form-control">
+                                    <option value="friends" <?php echo ($profile && $profile['looking_for'] === 'friends') ? 'selected' : ''; ?>>Teman</option>
+                                    <option value="study_partner" <?php echo ($profile && $profile['looking_for'] === 'study_partner') ? 'selected' : ''; ?>>Partner Belajar</option>
+                                    <option value="romance" <?php echo ($profile && $profile['looking_for'] === 'romance') ? 'selected' : ''; ?>>Romansa</option>
+                                </select>
+                            </div>
+                            
+                            <div class="upload-instructions">
+                                <h5>Tips Foto Profil</h5>
+                                <ul>
+                                    <li>Gunakan foto wajah yang jelas</li>
+                                    <li>Pastikan pencahayaan yang baik</li>
+                                    <li>Format yang didukung: JPG, PNG, GIF (max 2MB)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bio & Interests Tab -->
+                <div class="tab-content" id="bio-interests-content">
+                    <div class="tab-content-inner">
+                        <div class="form-section">
+                            <h4>Ceritakan Tentang Dirimu</h4>
+                            
+                            <div class="form-group">
+                                <label for="bio">Bio</label>
+                                <textarea id="bio" name="bio" class="form-control bio-textarea" rows="5" placeholder="Ceritakan tentang dirimu, apa yang membuatmu unik, atau hal menarik tentangmu..."><?php echo $profile ? htmlspecialchars($profile['bio']) : ''; ?></textarea>
+                                <div class="character-counter">
+                                    <span id="bio-char-count"><?php echo $profile ? strlen($profile['bio']) : '0'; ?></span>/500
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="interests">Minat & Hobi</label>
+                                <div class="interests-input-container">
+                                    <input type="text" id="interest-input" class="form-control" placeholder="Tambahkan minat (tekan Enter)">
+                                    <input type="hidden" id="interests" name="interests" value="<?php echo $profile ? htmlspecialchars($profile['interests']) : ''; ?>">
+                                </div>
+                                
+                                <div class="interests-container" id="interests-display">
+                                    <?php 
+                                    if ($profile && !empty($profile['interests'])) {
+                                        $interests_array = explode(',', $profile['interests']);
+                                        foreach ($interests_array as $interest) {
+                                            $interest = trim($interest);
+                                            if (!empty($interest)) {
+                                                echo '<span class="interest-tag">' . htmlspecialchars($interest) . ' <i class="fas fa-times"></i></span>';
+                                            }
+                                        }
+                                    } else {
+                                        echo '<span class="no-interests">Belum ada minat yang ditambahkan</span>';
+                                    }
+                                    ?>
+                                </div>
+                                <div class="form-hint">
+                                    <i class="fas fa-lightbulb"></i> Tambahkan hobi, aktivitas, atau topik yang kamu sukai. Minat yang sama bisa menjadi awal percakapan yang baik!
+                                </div>
+                            </div>
+                            
+                            <div class="interest-suggestions">
+                                <h5>Rekomendasi Minat</h5>
+                                <div class="suggestion-tags">
+                                    <span class="suggestion-tag" data-interest="Musik">Musik</span>
+                                    <span class="suggestion-tag" data-interest="Film">Film</span>
+                                    <span class="suggestion-tag" data-interest="Fotografi">Fotografi</span>
+                                    <span class="suggestion-tag" data-interest="Traveling">Traveling</span>
+                                    <span class="suggestion-tag" data-interest="Buku">Buku</span>
+                                    <span class="suggestion-tag" data-interest="Gaming">Gaming</span>
+                                    <span class="suggestion-tag" data-interest="Olahraga">Olahraga</span>
+                                    <span class="suggestion-tag" data-interest="Coding">Coding</span>
+                                    <span class="suggestion-tag" data-interest="Memasak">Memasak</span>
+                                    <span class="suggestion-tag" data-interest="Seni">Seni</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Privacy Settings Tab -->
+                <div class="tab-content" id="privacy-content">
+                    <div class="tab-content-inner">
+                        <div class="form-section">
+                            <h4>Pengaturan Privasi</h4>
+                            <p class="privacy-intro">Atur preferensi privasi untuk menentukan bagaimana profil dan informasi Anda ditampilkan kepada pengguna lain.</p>
+                            
+                            <div class="privacy-options">
+                                <div class="privacy-option">
+                                    <div class="privacy-option-info">
+                                        <div class="privacy-option-icon">
+                                            <i class="fas fa-search"></i>
+                                        </div>
+                                        <div class="privacy-option-text">
+                                            <h5>Tampilkan Profil Dalam Pencarian</h5>
+                                            <p>Izinkan pengguna lain menemukan profil Anda dalam hasil pencarian dan rekomendasi kecocokan.</p>
+                                        </div>
+                                    </div>
+                                    <label class="toggle">
+                                        <input type="checkbox" name="searchable" value="1" <?php echo ($profile && isset($profile['searchable']) && $profile['searchable'] == 1) ? 'checked' : ''; ?>>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="privacy-option">
+                                    <div class="privacy-option-info">
+                                        <div class="privacy-option-icon">
+                                            <i class="fas fa-circle"></i>
+                                        </div>
+                                        <div class="privacy-option-text">
+                                            <h5>Tampilkan Status Online</h5>
+                                            <p>Tampilkan status online Anda kepada pengguna lain.</p>
+                                        </div>
+                                    </div>
+                                    <label class="toggle">
+                                        <input type="checkbox" name="show_online" value="1" <?php echo ($profile && isset($profile['show_online']) && $profile['show_online'] == 1) ? 'checked' : ''; ?>>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="privacy-option">
+                                    <div class="privacy-option-info">
+                                        <div class="privacy-option-icon">
+                                            <i class="fas fa-envelope"></i>
+                                        </div>
+                                        <div class="privacy-option-text">
+                                            <h5>Terima Pesan dari Siapa Saja</h5>
+                                            <p>Izinkan pesan dari pengguna yang belum terhubung dengan Anda.</p>
+                                        </div>
+                                    </div>
+                                    <label class="toggle">
+                                        <input type="checkbox" name="allow_messages" value="1" <?php echo ($profile && isset($profile['allow_messages']) && $profile['allow_messages'] == 1) ? 'checked' : ''; ?>>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="privacy-option">
+                                    <div class="privacy-option-info">
+                                        <div class="privacy-option-icon">
+                                            <i class="fas fa-graduation-cap"></i>
+                                        </div>
+                                        <div class="privacy-option-text">
+                                            <h5>Tampilkan Jurusan</h5>
+                                            <p>Tampilkan informasi jurusan Anda kepada pengguna lain.</p>
+                                        </div>
+                                    </div>
+                                    <label class="toggle">
+                                        <input type="checkbox" name="show_major" value="1" <?php echo ($profile && isset($profile['show_major']) && $profile['show_major'] == 1) ? 'checked' : ''; ?>>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="privacy-notice">
+                                <i class="fas fa-shield-alt"></i>
+                                <p>Kami menjaga keamanan data Anda. Pengaturan privasi ini hanya mengontrol apa yang dilihat oleh pengguna lain, bukan apa yang disimpan oleh sistem.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- CSS Styles for the redesigned Profile Page -->
+    <style>
+    /* Profile Hero Card */
+    .profile-hero-card {
+        background-color: var(--card-bg);
+        border-radius: 15px;
+        overflow: hidden;
+        position: relative;
+        margin-bottom: 25px;
+        box-shadow: var(--card-shadow);
+    }
+    
+    .profile-hero-backdrop {
+        height: 120px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+        position: relative;
+    }
+    
+    .profile-hero-backdrop::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+        opacity: 0.7;
+    }
+    
+    .profile-hero-content {
+        padding: 0 30px 30px;
+        position: relative;
+        margin-top: -60px;
+    }
+    
+    .profile-avatar-wrapper {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 15px;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        overflow: hidden;
+        position: relative;
+        border: 5px solid var(--card-bg);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        background-color: #f0f0f0;
+    }
+    
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .profile-avatar-edit {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 36px;
+        height: 36px;
+        background-color: var(--primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s;
+    }
+    
+    .profile-avatar-edit:hover {
+        transform: scale(1.1);
+        background-color: #e63e5c;
+    }
+    
+    .profile-hero-info {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    
+    .profile-hero-info h3 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: var(--text-color);
+    }
+    
+    .profile-meta {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .profile-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-color);
+        opacity: 0.8;
+    }
+    
+    .profile-meta-item i {
+        color: var(--primary);
+    }
+    
+    /* Profile Progress */
+    .profile-progress-container {
+        background-color: rgba(0, 0, 0, 0.03);
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 15px;
+    }
+    
+    [data-theme="dark"] .profile-progress-container {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .profile-progress-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-weight: 500;
+    }
+    
+    .profile-progress-percentage {
+        color: var(--primary);
+    }
+    
+    .profile-progress-bar {
+        height: 8px;
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+    
+    [data-theme="dark"] .profile-progress-bar {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .profile-progress-fill {
+        height: 100%;
+        background: linear-gradient(to right, var(--primary), var(--accent));
+        border-radius: 4px;
+        transition: width 1s ease-in-out;
+    }
+    
+    .profile-progress-tips {
+        font-size: 13px;
+        color: #666;
+        text-align: center;
+        font-style: italic;
+    }
+    
+    /* Edit Form Card */
+    .profile-edit-card {
+        background-color: var(--card-bg);
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+    }
+    
+    /* Modern Tab Design */
+    .profile-tabs-container {
+        padding: 20px 20px 0;
+        position: relative;
+    }
+    
+    .profile-tabs {
+        display: flex;
+        overflow-x: auto;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .profile-tabs::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+    
+    .profile-tab {
+        padding: 15px 25px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-color);
+        opacity: 0.7;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        position: relative;
+        transition: all 0.3s;
+        white-space: nowrap;
+    }
+    
+    .profile-tab:hover {
+        opacity: 1;
+        color: var(--primary);
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    [data-theme="dark"] .profile-tab:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .profile-tab.active {
+        color: var(--primary);
+        opacity: 1;
+    }
+    
+    .profile-tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: var(--primary);
+        border-radius: 3px 3px 0 0;
+    }
+    
+    .tab-save-button {
+        position: absolute;
+        right: 20px;
+        top: 12px;
+    }
+    
+    .tab-save-button .btn {
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+    
+    /* Tab Contents */
+    .profile-tab-contents {
+        padding: 0;
+    }
+    
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.4s ease-in-out;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .tab-content-inner {
+        padding: 30px;
+    }
+    
+    .form-section {
+        margin-bottom: 30px;
+    }
+    
+    .form-section h4 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--text-color);
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    /* Form Styling */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .input-wrapper {
+        position: relative;
+    }
+    
+    .input-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(153, 153, 153, 0.5);
+        opacity: 0.7;
+        z-index: 0;
+        font-size: 14px;
+        pointer-events: none;
+    }
+    
+    .form-control {
+        padding: 12px 15px 12px 45px;
+        border: 1px solid var(--input-border);
+        border-radius: 10px;
+        width: 100%;
+        font-size: 16px;
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        transition: all 0.3s;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .form-control::placeholder {
+        color: #999;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(255, 75, 110, 0.1);
+    }
+    
+    .form-control:disabled,
+    .form-control[readonly] {
+        background-color: rgba(0, 0, 0, 0.03);
+        cursor: not-allowed;
+    }
+    
+    select.form-control {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 15px center;
+        padding-right: 40px;
+    }
+    
+    .bio-textarea {
+        padding: 15px;
+        min-height: 150px;
+        resize: vertical;
+    }
+    
+    .character-counter {
+        display: flex;
+        justify-content: flex-end;
+        font-size: 12px;
+        color: #999;
+        margin-top: 5px;
+    }
+    
+    .form-hint {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #666;
+    }
+    
+    /* Interest Tags */
+    .interests-input-container {
+        margin-bottom: 15px;
+    }
+    
+    .interests-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        min-height: 50px;
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 10px;
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    [data-theme="dark"] .interests-container {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .no-interests {
+        font-style: italic;
+        color: #999;
+    }
+    
+    .interest-tag {
+        background-color: var(--primary);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s;
+        animation: scaleIn 0.3s ease-out;
+    }
+    
+    .interest-tag i {
+        margin-left: 8px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .interest-tag i:hover {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    @keyframes scaleIn {
+        from {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    /* Interest Suggestions */
+    .interest-suggestions {
+        margin-top: 25px;
+    }
+    
+    .interest-suggestions h5 {
+        font-size: 15px;
+        font-weight: 500;
+        margin-bottom: 10px;
+        color: var(--text-color);
+    }
+    
+    .suggestion-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .suggestion-tag {
+        background-color: rgba(0, 0, 0, 0.05);
+        color: var(--text-color);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    [data-theme="dark"] .suggestion-tag {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .suggestion-tag:hover {
+        background-color: var(--secondary);
+        color: var(--primary);
+    }
+    
+    /* Upload Instructions */
+    .upload-instructions {
+        background-color: rgba(0, 0, 0, 0.03);
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+    
+    [data-theme="dark"] .upload-instructions {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .upload-instructions h5 {
+        font-size: 15px;
+        font-weight: 500;
+        margin-bottom: 10px;
+        color: var(--text-color);
+    }
+    
+    .upload-instructions ul {
+        padding-left: 20px;
+        margin: 0;
+    }
+    
+    .upload-instructions li {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    
+    /* Privacy Tab Styling */
+    .privacy-intro {
+        margin-bottom: 25px;
+        color: #666;
+    }
+    
+    .privacy-options {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .privacy-option {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: 12px;
+        transition: all 0.3s;
+    }
+    
+    [data-theme="dark"] .privacy-option {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+    
+    .privacy-option:hover {
+        background-color: rgba(255, 75, 110, 0.05);
+    }
+    
+    .privacy-option-info {
+        display: flex;
+        gap: 15px;
+        align-items: flex-start;
+        flex: 1;
+    }
+    
+    .privacy-option-icon {
+        width: 36px;
+        height: 36px;
+        background-color: var(--secondary);
+        color: var(--primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .privacy-option-text h5 {
+        font-size: 16px;
+        font-weight: 500;
+        margin-bottom: 5px;
+        color: var(--text-color);
+    }
+    
+    .privacy-option-text p {
+        font-size: 13px;
+        color: #666;
+        margin: 0;
+    }
+    
+    /* Toggle Switch */
+    .toggle {
+        position: relative;
+        display: inline-block;
+        width: 52px;
+        height: 26px;
+        flex-shrink: 0;
+    }
+    
+    .toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+    
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    
+    input:checked + .toggle-slider {
+        background-color: var(--primary);
+    }
+    
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+    
+    .privacy-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        margin-top: 30px;
+        padding: 15px;
+        background-color: rgba(0, 0, 0, 0.03);
+        border-radius: 10px;
+    }
+    
+    [data-theme="dark"] .privacy-notice {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .privacy-notice i {
+        color: var(--primary);
+        font-size: 20px;
+        margin-top: 2px;
+    }
+    
+    .privacy-notice p {
+        margin: 0;
+        font-size: 13px;
+        color: #666;
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 992px) {
+        .profile-tab {
+            padding: 15px 20px;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .tab-save-button {
+            position: static;
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .profile-hero-content {
+            padding: 0 20px 20px;
+        }
+        
+        .profile-tab span {
+            display: none;
+        }
+        
+        .profile-tab i {
+            font-size: 18px;
+        }
+        
+        .profile-tab {
+            padding: 15px;
+        }
+        
+        .tab-content-inner {
+            padding: 20px;
+        }
+        
+        .privacy-option {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .toggle {
+            align-self: flex-end;
+        }
+    }
+    </style>
+    
+    <!-- JavaScript for Profile Page -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching functionality
+            const tabs = document.querySelectorAll('.profile-tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+                    
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding content
+                    this.classList.add('active');
+                    document.getElementById(`${targetTab}-content`).classList.add('active');
+                });
+            });
+            
+            // Profile picture upload preview
+            const profilePic = document.getElementById('profile_pic');
+            const profilePreview = document.getElementById('profile-preview-img');
+            const avatarEditBtn = document.querySelector('.profile-avatar-edit');
+            
+            if (profilePic && profilePreview && avatarEditBtn) {
+                avatarEditBtn.addEventListener('click', function() {
+                    profilePic.click();
                 });
                 
-                // Handle file upload preview
-                document.getElementById('profile_pic').addEventListener('change', function() {
+                profilePic.addEventListener('change', function() {
                     if (this.files && this.files[0]) {
-                        const fileName = this.files[0].name;
-                        document.getElementById('file-name').value = fileName;
-                        
-                        // Optional: Preview the image
                         const reader = new FileReader();
+                        
                         reader.onload = function(e) {
-                            const profilePic = document.querySelector('.profile-pic img');
-                            profilePic.src = e.target.result;
-                        }
+                            profilePreview.src = e.target.result;
+                        };
+                        
                         reader.readAsDataURL(this.files[0]);
                     }
                 });
+            }
+            
+            // Interests functionality
+            const interestInput = document.getElementById('interest-input');
+            const interestsField = document.getElementById('interests');
+            const interestsDisplay = document.getElementById('interests-display');
+            const suggestionTags = document.querySelectorAll('.suggestion-tag');
+            
+            // Function to add an interest
+            function addInterest(interest) {
+                // Clean up the interest
+                interest = interest.trim();
+                if (interest === '') return;
                 
-                // Handle dynamic interests display
-                const interestsInput = document.getElementById('interests');
-                const interestsDisplay = document.getElementById('interests-display');
+                // Get current interests
+                let currentInterests = interestsField.value ? 
+                    interestsField.value.split(',').map(i => i.trim()).filter(i => i !== '') : 
+                    [];
                 
-                interestsInput.addEventListener('input', function() {
-                    const interests = this.value.split(',').filter(interest => interest.trim() !== '');
+                // Check if interest already exists
+                if (currentInterests.includes(interest)) return;
+                
+                // Add to interests array
+                currentInterests.push(interest);
+                
+                // Update hidden field
+                interestsField.value = currentInterests.join(', ');
+                
+                // Update display
+                updateInterestsDisplay();
+            }
+            
+            // Function to update interests display
+            function updateInterestsDisplay() {
+                const interests = interestsField.value ? 
+                    interestsField.value.split(',').map(i => i.trim()).filter(i => i !== '') : 
+                    [];
+                
+                if (interests.length > 0) {
+                    interestsDisplay.innerHTML = '';
                     
-                    if (interests.length > 0) {
-                        interestsDisplay.innerHTML = '';
+                    interests.forEach(interest => {
+                        const tag = document.createElement('span');
+                        tag.className = 'interest-tag';
+                        tag.innerHTML = interest + ' <i class="fas fa-times"></i>';
                         
-                        interests.forEach(interest => {
-                            const tag = document.createElement('span');
-                            tag.className = 'interest-tag';
-                            tag.innerHTML = interest.trim() + ' <i class="fas fa-times"></i>';
-                            interestsDisplay.appendChild(tag);
-                            
-                            // Add event listener to remove tag when clicked
-                            tag.querySelector('i').addEventListener('click', function() {
-                                const removedInterest = this.parentNode.textContent.trim().slice(0, -1).trim();
-                                const currentInterests = interestsInput.value.split(',').map(i => i.trim());
-                                const filteredInterests = currentInterests.filter(i => i !== removedInterest);
-                                interestsInput.value = filteredInterests.join(', ');
-                                this.parentNode.remove();
-                                
-                                if (interestsDisplay.children.length === 0) {
-                                    interestsDisplay.innerHTML = '<span class="text-muted">Belum ada minat yang ditambahkan</span>';
-                                }
-                            });
+                        // Add remove functionality
+                        tag.querySelector('i').addEventListener('click', function() {
+                            removeInterest(interest);
                         });
-                    } else {
-                        interestsDisplay.innerHTML = '<span class="text-muted">Belum ada minat yang ditambahkan</span>';
+                        
+                        interestsDisplay.appendChild(tag);
+                    });
+                } else {
+                    interestsDisplay.innerHTML = '<span class="no-interests">Belum ada minat yang ditambahkan</span>';
+                }
+            }
+            
+            // Function to remove an interest
+            function removeInterest(interest) {
+                // Get current interests
+                let currentInterests = interestsField.value ? 
+                    interestsField.value.split(',').map(i => i.trim()).filter(i => i !== '') : 
+                    [];
+                
+                // Remove the interest
+                currentInterests = currentInterests.filter(i => i !== interest);
+                
+                // Update hidden field
+                interestsField.value = currentInterests.join(', ');
+                
+                // Update display
+                updateInterestsDisplay();
+            }
+            
+            // Add event listener to interest input
+            if (interestInput) {
+                interestInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault();
+                        addInterest(this.value);
+                        this.value = '';
                     }
                 });
+            }
+            
+            // Add event listener to suggestion tags
+            suggestionTags.forEach(tag => {
+                tag.addEventListener('click', function() {
+                    const interest = this.getAttribute('data-interest');
+                    addInterest(interest);
+                    interestInput.focus();
+                });
+            });
+            
+            // Initialize interests display
+            if (interestsDisplay) {
+                updateInterestsDisplay();
                 
-                // Add click event to existing interest tags
-                document.querySelectorAll('.interest-tag i').forEach(icon => {
-                    icon.addEventListener('click', function() {
-                        const removedInterest = this.parentNode.textContent.trim().slice(0, -1).trim();
-                        const currentInterests = interestsInput.value.split(',').map(i => i.trim());
-                        const filteredInterests = currentInterests.filter(i => i !== removedInterest);
-                        interestsInput.value = filteredInterests.join(', ');
-                        this.parentNode.remove();
-                        
-                        if (interestsDisplay.children.length === 0) {
-                            interestsDisplay.innerHTML = '<span class="text-muted">Belum ada minat yang ditambahkan</span>';
-                        }
+                // Add remove functionality to existing tags
+                document.querySelectorAll('.interest-tag i').forEach(removeIcon => {
+                    removeIcon.addEventListener('click', function() {
+                        const interestText = this.parentNode.textContent.trim().slice(0, -1).trim();
+                        removeInterest(interestText);
                     });
                 });
-            </script>
+            }
+            
+            // Bio character counter
+            const bioTextarea = document.getElementById('bio');
+            const bioCharCount = document.getElementById('bio-char-count');
+            
+            if (bioTextarea && bioCharCount) {
+                bioTextarea.addEventListener('input', function() {
+                    const count = this.value.length;
+                    bioCharCount.textContent = count;
+                    
+                    if (count > 450) {
+                        bioCharCount.style.color = '#dc3545';
+                    } else if (count > 400) {
+                        bioCharCount.style.color = '#ffc107';
+                    } else {
+                        bioCharCount.style.color = '#999';
+                    }
+                });
+            }
+        });
+    </script>
+<?php endif; ?>
                                 
                             <!-- Menfess Section for Dashboard -->
-        <?php elseif ($page === 'menfess'): ?>
+        <?php if ($page === 'menfess'): ?>
             <div class="dashboard-header">
                 <h2>Crush Menfess</h2>
                 <p>Kirim pesan anonim ke crush Anda. Jika keduanya saling suka, nama akan terungkap!</p>

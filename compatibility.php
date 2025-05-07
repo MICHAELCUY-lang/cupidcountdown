@@ -9,7 +9,7 @@ session_start();
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit();
 }
 
@@ -558,14 +558,14 @@ if ($test_taken) {
     <header>
         <div class="container">
             <div class="header-content">
-                <a href="cupid.php" class="logo">
+                <a href="cupid" class="logo">
                     <i class="fas fa-heart"></i> Cupid
                 </a>
                 <nav>
                     <ul>
-                        <li><a href="dashboard.php">Dashboard</a></li>
+                        <li><a href="dashboard">Dashboard</a></li>
                         <li>
-                            <a href="dashboard.php?page=compatibility" class="btn btn-outline">Kembali</a>
+                            <a href="dashboard?page=compatibility" class="btn btn-outline">Kembali</a>
                         </li>
                     </ul>
                 </nav>
@@ -637,7 +637,7 @@ if ($test_taken) {
                 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h3>Pasangan Yang Cocok</h3>
-                    <a href="compatibility.php?reset=true" class="btn btn-outline">Ambil Tes Ulang</a>
+                    <a href="compatibility?reset=true" class="btn btn-outline">Ambil Tes Ulang</a>
                 </div>
                 
                 <?php if (empty($compatible_matches)): ?>
@@ -682,8 +682,8 @@ if ($test_taken) {
                             </div>
                             
                             <div class="match-actions">
-                                <a href="view_profile.php?id=<?php echo $match['id']; ?>" class="btn btn-outline">Lihat Profil</a>
-                                <a href="start_chat.php?user_id=<?php echo $match['id']; ?>" class="btn">Chat</a>
+                                <a href="view_profile?id=<?php echo $match['id']; ?>" class="btn btn-outline">Lihat Profil</a>
+                                <a href="start_chat?user_id=<?php echo $match['id']; ?>" class="btn">Chat</a>
                             </div>
                         </div>
                     </div>
@@ -693,7 +693,7 @@ if ($test_taken) {
                 
                 <!-- Tombol Reset Tes -->
                 <div style="margin-top: 30px; text-align: center;">
-                    <a href="compatibility.php?reset=true" class="btn" style="background-color: #dc3545; color: white;">Reset Tes & Mulai Ulang</a>
+                    <a href="compatibility?reset=true" class="btn" style="background-color: #dc3545; color: white;">Reset Tes & Mulai Ulang</a>
                 </div>
                 
             </div>

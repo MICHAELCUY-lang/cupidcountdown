@@ -66,7 +66,7 @@ $api_url = $is_production ?
 // Prepare transaction data for Midtrans
 $transaction_details = [
     'order_id' => $order_id,
-    'gross_amount' => $order_details['amount']  
+    'gross_amount' => $order_details['amount']
 ];
 
 $customer_details = [
